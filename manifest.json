@@ -16,5 +16,13 @@
       "css": ["content.css"],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "instagram-reels-controls@angeloc98",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  }
 }
