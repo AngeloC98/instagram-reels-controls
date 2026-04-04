@@ -26,7 +26,7 @@ const observer = new MutationObserver((mutations) => {
 })
 
 void prefsReady.then(() => {
-  const root = document.body || document.documentElement
+  const root = document.body
   observer.observe(root, { childList: true, subtree: true })
   findAndInjectReelVideos()
 })

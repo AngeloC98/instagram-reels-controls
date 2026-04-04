@@ -27,7 +27,9 @@
   flex-direction: column;
   opacity: 0;
   transform: translateY(-6px);
-  transition: opacity var(--irc-normal) ease, transform var(--irc-normal) ease;
+  transition:
+    opacity var(--irc-normal) ease,
+    transform var(--irc-normal) ease;
   pointer-events: none;
 }
 
@@ -139,7 +141,9 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background var(--irc-fast), transform var(--irc-fast);
+  transition:
+    background var(--irc-fast),
+    transform var(--irc-fast);
   line-height: 0;
   padding: 0;
 }
@@ -173,7 +177,10 @@
   outline: none;
   cursor: pointer;
   flex-shrink: 0;
-  transition: width var(--irc-normal) ease, opacity var(--irc-normal) ease, height var(--irc-fast);
+  transition:
+    width var(--irc-normal) ease,
+    opacity var(--irc-normal) ease,
+    height var(--irc-fast);
 }
 
 .irc-vol-group:hover .irc-volume,
@@ -278,13 +285,16 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
   min-width: 160px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45),
-              inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   z-index: 10000;
   opacity: 1;
   transform: scale(1) translateY(0);
   transform-origin: top right;
-  transition: opacity var(--irc-fast) ease, transform var(--irc-fast) ease;
+  transition:
+    opacity var(--irc-fast) ease,
+    transform var(--irc-fast) ease;
 }
 
 .irc-speed-menu[hidden] {

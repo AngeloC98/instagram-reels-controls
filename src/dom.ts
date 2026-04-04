@@ -77,14 +77,14 @@ export function createControlsDOM(): ControlElements {
   ])
 
   return {
-    bar: bar as HTMLDivElement,
+    bar,
     playBtn,
-    seekBar: seekBar as HTMLInputElement,
-    timeLabel: timeLabel as HTMLSpanElement,
+    seekBar,
+    timeLabel,
     speedBtn,
-    speedMenu: speedMenu as HTMLDivElement,
-    speedOptions: speedOptions as HTMLDivElement[],
+    speedMenu,
+    speedOptions,
     muteBtn,
-    volumeBar: volumeBar as HTMLInputElement,
+    volumeBar,
   }
 }

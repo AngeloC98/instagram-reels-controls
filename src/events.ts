@@ -39,12 +39,20 @@ export function wireEvents(
     },
     { signal: sig },
   )
-  bar.addEventListener('pointerdown', (e) => e.stopPropagation(), { signal: sig })
+  bar.addEventListener(
+    'pointerdown',
+    (e) => {
+      e.stopPropagation()
+    },
+    { signal: sig },
+  )
   bar.addEventListener(
     'pointerup',
     (e) => {
       if ((e.target as HTMLElement).matches('input[type="range"]'))
-        setTimeout(() => (e.target as HTMLElement).blur(), 0)
+        setTimeout(() => {
+          ;(e.target as HTMLElement).blur()
+        }, 0)
     },
     { signal: sig },
   )
@@ -54,8 +62,20 @@ export function wireEvents(
   video.addEventListener('durationchange', sync.updateSeek, { signal: sig })
   video.addEventListener('volumechange', sync.updateMute, { signal: sig })
 
-  video.addEventListener('play', () => tickLoop.start(), { signal: sig })
-  video.addEventListener('pause', () => tickLoop.stop(), { signal: sig })
+  video.addEventListener(
+    'play',
+    () => {
+      tickLoop.start()
+    },
+    { signal: sig },
+  )
+  video.addEventListener(
+    'pause',
+    () => {
+      tickLoop.stop()
+    },
+    { signal: sig },
+  )
 
   // Override Instagram's volume resets, but only after user has interacted
   video.addEventListener(
@@ -110,7 +130,13 @@ export function wireEvents(
     },
     { signal: sig },
   )
-  seekBar.addEventListener('click', (e) => e.stopPropagation(), { signal: sig })
+  seekBar.addEventListener(
+    'click',
+    (e) => {
+      e.stopPropagation()
+    },
+    { signal: sig },
+  )
 
   speedBtn.addEventListener(
     'click',
@@ -130,7 +156,9 @@ export function wireEvents(
         video.playbackRate = speed
         setSpeed(speed)
         speedBtn.textContent = opt.textContent
-        speedOptions.forEach((o) => o.classList.remove('irc-speed-active'))
+        speedOptions.forEach((o) => {
+          o.classList.remove('irc-speed-active')
+        })
         opt.classList.add('irc-speed-active')
         speedMenu.hidden = true
         savePrefs()
@@ -165,5 +193,11 @@ export function wireEvents(
     },
     { signal: sig },
   )
-  volumeBar.addEventListener('click', (e) => e.stopPropagation(), { signal: sig })
+  volumeBar.addEventListener(
+    'click',
+    (e) => {
+      e.stopPropagation()
+    },
+    { signal: sig },
+  )
 }
