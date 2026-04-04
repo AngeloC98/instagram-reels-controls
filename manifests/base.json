@@ -22,13 +22,5 @@
       "resources": ["icons/*.svg"],
       "matches": ["*://www.instagram.com/*"]
     }
-  ],
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "instagram-reels-controls@angeloc98",
-      "data_collection_permissions": {
-        "required": ["none"]
-      }
-    }
-  }
+  ]
 }

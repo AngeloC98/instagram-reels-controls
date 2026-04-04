@@ -1,0 +1,84 @@
+import { describe, it, expect, vi } from 'vitest'
+import { createSyncHandlers } from '../sync'
+import type { ControlElements } from '../types'
+
+vi.mock('../browser', () => ({
+  ext: {
+    runtime: { getURL: (path: string) => `chrome-extension://test/${path}` },
+    storage: { local: { get: vi.fn().mockResolvedValue({}), set: vi.fn() } },
+  },
+}))
+
+function mockVideo(overrides: Partial<HTMLVideoElement> = {}): HTMLVideoElement {
+  return {
+    paused: true,
+    muted: false,
+    volume: 1,
+    currentTime: 0,
+    duration: 100,
+    playbackRate: 1,
+    ...overrides,
+  } as HTMLVideoElement
+}
+
+function mockEls(): ControlElements {
+  const makeBtn = (): HTMLButtonElement => document.createElement('button')
+  const makeInput = (): HTMLInputElement => document.createElement('input')
+  return {
+    bar: document.createElement('div'),
+    playBtn: makeBtn(),
+    seekBar: makeInput(),
+    timeLabel: document.createElement('span'),
+    speedBtn: makeBtn(),
+    speedMenu: document.createElement('div'),
+    speedOptions: [],
+    muteBtn: makeBtn(),
+    volumeBar: makeInput(),
+  }
+}
+
+describe('createSyncHandlers', () => {
+  it('updatePlayButton sets play icon when paused', () => {
+    const video = mockVideo({ paused: true })
+    const els = mockEls()
+    const handlers = createSyncHandlers(video, els)
+    handlers.updatePlayButton()
+    const img = els.playBtn.querySelector('img')
+    expect(img?.src).toContain('play.svg')
+  })
+
+  it('updatePlayButton sets pause icon when playing', () => {
+    const video = mockVideo({ paused: false })
+    const els = mockEls()
+    const handlers = createSyncHandlers(video, els)
+    handlers.updatePlayButton()
+    const img = els.playBtn.querySelector('img')
+    expect(img?.src).toContain('pause.svg')
+  })
+
+  it('updateMute sets vol-mute icon when muted', () => {
+    const video = mockVideo({ muted: true, volume: 1 })
+    const els = mockEls()
+    const handlers = createSyncHandlers(video, els)
+    handlers.updateMute()
+    const img = els.muteBtn.querySelector('img')
+    expect(img?.src).toContain('vol-mute.svg')
+  })
+
+  it('updateSeek sets seekBar value correctly', () => {
+    const video = mockVideo({ currentTime: 50, duration: 100, paused: false })
+    const els = mockEls()
+    const handlers = createSyncHandlers(video, els)
+    handlers.updateSeek()
+    expect(els.seekBar.value).toBe('50')
+  })
+
+  it('updateSeek skips when scrubbing is true', () => {
+    const video = mockVideo({ currentTime: 50, duration: 100 })
+    const els = mockEls()
+    const handlers = createSyncHandlers(video, els)
+    handlers.scrubbing = true
+    handlers.updateSeek()
+    expect(els.seekBar.value).toBe('')
+  })
+})
