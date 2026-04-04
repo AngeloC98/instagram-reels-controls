@@ -8,8 +8,8 @@
     "build": "npm run build:firefox && npm run build:chrome",
     "build:firefox": "vite build -- --target=firefox",
     "build:chrome": "vite build -- --target=chrome",
-    "zip:firefox": "node scripts/zip.js firefox",
-    "zip:chrome": "node scripts/zip.js chrome",
+    "zip:firefox": "tsx scripts/zip.ts firefox",
+    "zip:chrome": "tsx scripts/zip.ts chrome",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src/ && prettier --check src/ content.css",
@@ -24,6 +24,7 @@
     "eslint-config-prettier": "^10.1.8",
     "jsdom": "^29.0.1",
     "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.3",
     "vitest": "^4.1.2"
