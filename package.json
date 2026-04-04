@@ -16,6 +16,7 @@
     "format": "prettier --write src/ content.css"
   },
   "devDependencies": {
+    "@types/chrome": "^0.1.39",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.58.0",
     "@vitest/coverage-v8": "^4.1.2",
