@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "description": "Adds standard media controls to Instagram Reels.",
   "icons": {
-    "16": "icons/icon.svg",
-    "48": "icons/icon.svg",
-    "128": "icons/icon.svg"
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
   "permissions": ["storage"],
   "content_scripts": [
@@ -19,7 +19,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/*.svg"],
+      "resources": ["icons/*"],
       "matches": ["*://www.instagram.com/*"]
     }
   ]
