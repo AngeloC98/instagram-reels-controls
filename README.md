@@ -4,18 +4,16 @@ A browser extension that adds standard media controls to Instagram Reels and vid
 
 ## Features
 
-- Play/pause, seek bar, and time display
-- Volume slider with expand-on-hover
+- Full media controls: play/pause, seek, volume, time display
 - Playback speed picker (0.25x - 2x)
-- Preferences persist across sessions (volume, speed, mute state)
-- Frosted glass UI that stays out of Instagram's native overlay
+- Volume and speed preferences persist across sessions
 - Works on Reels and regular video posts
 
 ## Install
 
 ### Firefox
 
-Install from [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/instagram-reels-controls/) (pending review).
+Install from [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/instagram-reels-controls/).
 
 Or load temporarily via `about:debugging` > Load Temporary Add-on > select `dist/firefox/manifest.json`.
 
@@ -32,6 +30,7 @@ npm run build         # build both targets
 npm run test          # run tests
 npm run lint          # eslint + prettier check
 npm run format        # prettier fix
+npm run icons         # regenerate icon PNGs from SVG
 ```
 
 ### Project structure
