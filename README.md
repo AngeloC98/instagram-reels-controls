@@ -15,11 +15,21 @@ A browser extension that adds standard media controls to Instagram Reels and vid
 
 Install from [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/instagram-reels-controls/).
 
-Or load temporarily via `about:debugging` > Load Temporary Add-on > select `dist/firefox/manifest.json`.
+### Chrome
 
-### Chrome (planned)
+Install from the [Chrome Web Store](https://chrome.google.com/webstore/detail/fbojkcimdhmbafddcipholkgjfoanani).
 
-Build with `npm run build:chrome` and load from `dist/chrome/` via `chrome://extensions` > Load unpacked.
+### Manual install
+
+You can also build from source and load the extension manually:
+
+```bash
+npm install
+npm run build           # builds both targets
+```
+
+- **Firefox:** `about:debugging` > Load Temporary Add-on > select `dist/firefox/manifest.json`
+- **Chrome:** `chrome://extensions` > Developer mode > Load unpacked > select `dist/chrome/`
 
 ## Development
 
