@@ -95,18 +95,31 @@
 .irc-seek-thumb {
   position: absolute;
   top: 50%;
-  width: 13px;
-  height: 13px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: var(--irc-accent);
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px var(--irc-shadow-thumb);
+  background: transparent;
   transform: translate(-50%, -50%);
   opacity: 0;
   pointer-events: none;
+  cursor: pointer;
   transition:
     left 50ms linear,
     opacity var(--irc-fast) ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--irc-accent);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px var(--irc-shadow-thumb);
+    transform: translate(-50%, -50%);
+  }
 }
 
 *:hover > .irc-controls .irc-seek,
@@ -117,6 +130,7 @@
 
 .irc-controls:hover .irc-seek-thumb {
   opacity: 1;
+  pointer-events: all;
 }
 
 .irc-bottom {
@@ -148,6 +162,8 @@
   padding: 5px 10px;
   border: 1px solid var(--irc-border);
   transform: translateY(0);
+  overflow: visible;
+  z-index: 1;
 }
 
 .irc-btn {
@@ -191,6 +207,10 @@
     opacity: 1;
     pointer-events: all;
   }
+
+  &:hover .irc-vol-thumb {
+    pointer-events: all;
+  }
 }
 
 .irc-volume {
@@ -226,12 +246,25 @@
 .irc-vol-thumb {
   position: absolute;
   top: 50%;
-  width: 11px;
-  height: 11px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #fff;
+  background: transparent;
   transform: translate(-50%, -50%);
   pointer-events: none;
+  cursor: pointer;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #fff;
+    transform: translate(-50%, -50%);
+  }
 }
 
 .irc-time {

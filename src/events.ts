@@ -168,9 +168,15 @@ export function wireEvents(
     'click',
     (e) => {
       e.stopPropagation()
+      e.preventDefault()
       setUserInteracted()
+      if (video.muted && preferredVolume === 0) {
+        setVolume(0.1)
+        video.volume = 0.1
+      }
       setMuted(!video.muted)
       video.muted = preferredMuted
+      sync.updateMute()
       savePrefs()
     },
     { signal: sig },
