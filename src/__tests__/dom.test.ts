@@ -59,7 +59,9 @@ describe('createControlsDOM', () => {
     expect(dom.speedMenu).toBeDefined()
     expect(dom.speedOptions).toBeDefined()
     expect(dom.muteBtn).toBeDefined()
-    expect(dom.volumeBar).toBeDefined()
+    expect(dom.volTrack).toBeDefined()
+    expect(dom.volFill).toBeDefined()
+    expect(dom.volThumb).toBeDefined()
   })
 
   it('speedOptions has length 7', () => {

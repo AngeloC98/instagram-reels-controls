@@ -28,15 +28,9 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 export function createControlsDOM(): ControlElements {
   const playBtn = el('button', { className: 'irc-btn irc-playpause', title: 'Play/Pause' })
   const muteBtn = el('button', { className: 'irc-btn irc-mute', title: 'Mute/Unmute' })
-  const volumeBar = el('input', {
-    className: 'irc-volume',
-    type: 'range',
-    min: '0',
-    max: '1',
-    step: '0.02',
-    value: '1',
-    title: 'Volume',
-  })
+  const volFill = el('div', { className: 'irc-vol-fill' })
+  const volThumb = el('div', { className: 'irc-vol-thumb' })
+  const volTrack = el('div', { className: 'irc-volume' }, [volFill, volThumb])
   const timeLabel = el('span', { className: 'irc-time', textContent: '0:00 / 0:00' })
   const speedBtn = el('button', {
     className: 'irc-speed-btn',
@@ -64,7 +58,7 @@ export function createControlsDOM(): ControlElements {
   const bar = el('div', { className: CONTROLS_CLASS }, [
     el('div', { className: 'irc-row irc-bottom' }, [
       playBtn,
-      el('div', { className: 'irc-vol-group' }, [muteBtn, volumeBar]),
+      el('div', { className: 'irc-vol-group' }, [muteBtn, volTrack]),
       timeLabel,
       el('div', { className: 'irc-speed-wrap' }, [speedBtn, speedMenu]),
     ]),
@@ -82,6 +76,8 @@ export function createControlsDOM(): ControlElements {
     speedMenu,
     speedOptions,
     muteBtn,
-    volumeBar,
+    volTrack,
+    volFill,
+    volThumb,
   }
 }

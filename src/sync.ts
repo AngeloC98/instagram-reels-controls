@@ -10,18 +10,14 @@ export function formatTime(seconds: number): string {
   return `${String(m)}:${s}`
 }
 
-export function volumeGradient(pct: number): string {
-  return `linear-gradient(to right, #fff ${String(pct)}%, rgba(255,255,255,0.3) ${String(pct)}%)`
-}
-
-export function setSeekPosition(fill: HTMLDivElement, thumb: HTMLDivElement, pct: number): void {
+export function setSliderPosition(fill: HTMLDivElement, thumb: HTMLDivElement, pct: number): void {
   const clamped = Math.max(0, Math.min(100, pct))
   fill.style.width = `${String(clamped)}%`
   thumb.style.left = `${String(clamped)}%`
 }
 
 export function createSyncHandlers(video: HTMLVideoElement, els: ControlElements): SyncHandlers {
-  const { playBtn, seekFill, seekThumb, timeLabel, muteBtn, volumeBar } = els
+  const { playBtn, seekFill, seekThumb, timeLabel, muteBtn, volFill, volThumb } = els
   let scrubbing = false
   let lastTimeText = ''
 
@@ -44,7 +40,7 @@ export function createSyncHandlers(video: HTMLVideoElement, els: ControlElements
     updateSeek() {
       if (video.duration && !scrubbing) {
         const pct = (video.currentTime / video.duration) * 100
-        setSeekPosition(seekFill, seekThumb, pct)
+        setSliderPosition(seekFill, seekThumb, pct)
         const text = formatTimeLabel()
         if (text !== lastTimeText) {
           timeLabel.textContent = text
@@ -62,8 +58,7 @@ export function createSyncHandlers(video: HTMLVideoElement, els: ControlElements
         setIcon(muteBtn, ICON.volHigh)
       }
       const vol = video.muted ? 0 : video.volume
-      volumeBar.value = String(vol)
-      volumeBar.style.background = volumeGradient(vol * 100)
+      setSliderPosition(volFill, volThumb, vol * 100)
     },
   }
 }

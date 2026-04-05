@@ -192,17 +192,20 @@
     opacity: 1;
     pointer-events: all;
   }
+
+  &:hover .irc-vol-thumb {
+    opacity: 1;
+  }
 }
 
 .irc-volume {
+  position: relative;
   width: 0;
   opacity: 0;
   pointer-events: none;
   height: 3px;
-  appearance: none;
   background: var(--irc-track);
   border-radius: 3px;
-  outline: none;
   cursor: pointer;
   flex-shrink: 0;
   transition:
@@ -210,59 +213,32 @@
     opacity var(--irc-normal) ease,
     height var(--irc-fast);
 
-  &:focus {
-    width: 60px;
-    opacity: 1;
-    pointer-events: all;
-  }
-
   &:hover {
     height: 5px;
   }
+}
 
-  /* WebKit */
-  &::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    background: #fff;
-    border: none;
-    cursor: pointer;
-    margin-top: -4px;
-    opacity: 0;
-    transition: opacity var(--irc-fast);
-  }
+.irc-vol-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: #fff;
+  pointer-events: none;
+}
 
-  &:hover::-webkit-slider-thumb {
-    opacity: 1;
-  }
-
-  &::-webkit-slider-runnable-track {
-    height: inherit;
-    border-radius: 3px;
-  }
-
-  /* Firefox */
-  &::-moz-range-thumb {
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    background: #fff;
-    border: none;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity var(--irc-fast);
-  }
-
-  &:hover::-moz-range-thumb {
-    opacity: 1;
-  }
-
-  &::-moz-range-progress {
-    background: #fff;
-    border-radius: 3px;
-  }
+.irc-vol-thumb {
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--irc-fast) ease;
 }
 
 .irc-time {

@@ -23,7 +23,6 @@ function mockVideo(overrides: Partial<HTMLVideoElement> = {}): HTMLVideoElement 
 
 function mockEls(): ControlElements {
   const makeBtn = (): HTMLButtonElement => document.createElement('button')
-  const makeInput = (): HTMLInputElement => document.createElement('input')
   return {
     bar: document.createElement('div'),
     playBtn: makeBtn(),
@@ -35,7 +34,9 @@ function mockEls(): ControlElements {
     speedMenu: document.createElement('div'),
     speedOptions: [],
     muteBtn: makeBtn(),
-    volumeBar: makeInput(),
+    volTrack: document.createElement('div'),
+    volFill: document.createElement('div'),
+    volThumb: document.createElement('div'),
   }
 }
 

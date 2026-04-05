@@ -9,7 +9,9 @@ export interface ControlElements {
   speedMenu: HTMLDivElement
   speedOptions: HTMLDivElement[]
   muteBtn: HTMLButtonElement
-  volumeBar: HTMLInputElement
+  volTrack: HTMLDivElement
+  volFill: HTMLDivElement
+  volThumb: HTMLDivElement
 }
 
 export interface SyncHandlers {

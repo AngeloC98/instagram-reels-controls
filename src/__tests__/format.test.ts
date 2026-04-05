@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { formatTime, volumeGradient } from '../sync'
+import { formatTime } from '../sync'
 
 vi.mock('../browser', () => ({
   ext: {
@@ -31,16 +31,5 @@ describe('formatTime', () => {
 
   it('floors 59.9 seconds', () => {
     expect(formatTime(59.9)).toBe('0:59')
-  })
-})
-
-describe('volumeGradient', () => {
-  it('contains linear-gradient', () => {
-    expect(volumeGradient(75)).toContain('linear-gradient')
-  })
-
-  it('contains the pct value', () => {
-    const result = volumeGradient(80)
-    expect(result).toContain('80')
   })
 })

@@ -9,7 +9,7 @@ import {
   setUserInteracted,
   savePrefs,
 } from './preferences'
-import { setSeekPosition, formatTime } from './sync'
+import { setSliderPosition, formatTime } from './sync'
 
 export function wireEvents(
   video: HTMLVideoElement,
@@ -29,7 +29,9 @@ export function wireEvents(
     speedMenu,
     speedOptions,
     muteBtn,
-    volumeBar,
+    volTrack,
+    volFill,
+    volThumb,
   } = els
 
   // Stop clicks from reaching Instagram's handlers (which toggle play/mute)
@@ -45,16 +47,6 @@ export function wireEvents(
     'pointerdown',
     (e) => {
       e.stopPropagation()
-    },
-    { signal: sig },
-  )
-  bar.addEventListener(
-    'pointerup',
-    (e) => {
-      if ((e.target as HTMLElement).matches('input[type="range"]'))
-        setTimeout(() => {
-          ;(e.target as HTMLElement).blur()
-        }, 0)
     },
     { signal: sig },
   )
@@ -107,7 +99,7 @@ export function wireEvents(
     const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
     if (video.duration) {
       video.currentTime = (pct / 100) * video.duration
-      setSeekPosition(seekFill, seekThumb, pct)
+      setSliderPosition(seekFill, seekThumb, pct)
       timeLabel.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`
     }
   }
@@ -184,21 +176,48 @@ export function wireEvents(
     { signal: sig },
   )
 
-  volumeBar.addEventListener(
-    'input',
+  function volToPointer(e: PointerEvent): void {
+    const rect = volTrack.getBoundingClientRect()
+    const vol = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    setUserInteracted()
+    setVolume(vol)
+    setMuted(vol === 0)
+    video.volume = vol
+    video.muted = preferredMuted
+    setSliderPosition(volFill, volThumb, vol * 100)
+  }
+
+  let volDragging = false
+  volTrack.addEventListener(
+    'pointerdown',
     (e) => {
       e.stopPropagation()
-      setUserInteracted()
-      const vol = parseFloat(volumeBar.value)
-      setVolume(vol)
-      setMuted(vol === 0)
-      video.volume = vol
-      video.muted = preferredMuted
-      savePrefs()
+      e.preventDefault()
+      volDragging = true
+      volToPointer(e)
+      volTrack.setPointerCapture(e.pointerId)
     },
     { signal: sig },
   )
-  volumeBar.addEventListener(
+  volTrack.addEventListener(
+    'pointermove',
+    (e) => {
+      if (volDragging) volToPointer(e)
+    },
+    { signal: sig },
+  )
+  volTrack.addEventListener(
+    'pointerup',
+    (e) => {
+      if (volDragging) {
+        volDragging = false
+        volTrack.releasePointerCapture(e.pointerId)
+        savePrefs()
+      }
+    },
+    { signal: sig },
+  )
+  volTrack.addEventListener(
     'click',
     (e) => {
       e.stopPropagation()
