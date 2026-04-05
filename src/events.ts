@@ -124,17 +124,15 @@ export function wireEvents(
     },
     { signal: sig },
   )
-  seekTrack.addEventListener(
-    'pointerup',
-    (e) => {
-      if (sync.scrubbing) {
-        sync.scrubbing = false
-        seekTrack.releasePointerCapture(e.pointerId)
-        if (wasPlaying) void video.play()
-      }
-    },
-    { signal: sig },
-  )
+  const endSeekDrag = (e: PointerEvent) => {
+    if (sync.scrubbing) {
+      sync.scrubbing = false
+      seekTrack.releasePointerCapture(e.pointerId)
+      if (wasPlaying) void video.play()
+    }
+  }
+  seekTrack.addEventListener('pointerup', endSeekDrag, { signal: sig })
+  seekTrack.addEventListener('pointercancel', endSeekDrag, { signal: sig })
   speedBtn.addEventListener(
     'click',
     (e) => {
@@ -212,17 +210,15 @@ export function wireEvents(
     },
     { signal: sig },
   )
-  volTrack.addEventListener(
-    'pointerup',
-    (e) => {
-      if (volDragging) {
-        volDragging = false
-        volTrack.releasePointerCapture(e.pointerId)
-        savePrefs()
-      }
-    },
-    { signal: sig },
-  )
+  const endVolDrag = (e: PointerEvent) => {
+    if (volDragging) {
+      volDragging = false
+      volTrack.releasePointerCapture(e.pointerId)
+      savePrefs()
+    }
+  }
+  volTrack.addEventListener('pointerup', endVolDrag, { signal: sig })
+  volTrack.addEventListener('pointercancel', endVolDrag, { signal: sig })
   volTrack.addEventListener(
     'click',
     (e) => {

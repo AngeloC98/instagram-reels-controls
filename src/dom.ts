@@ -56,13 +56,13 @@ export function createControlsDOM(): ControlElements {
   const seekTrack = el('div', { className: 'irc-seek' }, [seekFill, seekThumb])
 
   const bar = el('div', { className: CONTROLS_CLASS }, [
-    el('div', { className: 'irc-row irc-bottom' }, [
+    el('div', { className: 'irc-row irc-upper' }, [
       playBtn,
       el('div', { className: 'irc-vol-group' }, [muteBtn, volTrack]),
       timeLabel,
       el('div', { className: 'irc-speed-wrap' }, [speedBtn, speedMenu]),
     ]),
-    el('div', { className: 'irc-row irc-top' }, [seekTrack]),
+    el('div', { className: 'irc-row irc-lower' }, [seekTrack]),
   ])
 
   return {

@@ -54,7 +54,7 @@
   align-items: center;
 }
 
-.irc-top {
+.irc-lower {
   width: 100%;
   margin-top: 0;
   padding: 0;
@@ -64,8 +64,8 @@
     padding var(--irc-normal) ease;
 }
 
-*:hover > .irc-controls .irc-top,
-.irc-controls:hover .irc-top {
+*:hover > .irc-controls .irc-lower,
+.irc-controls:hover .irc-lower {
   margin-top: 8px;
   padding: 0 2px;
 }
@@ -95,6 +95,7 @@
 .irc-seek-thumb {
   position: absolute;
   top: 50%;
+  left: 0;
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -133,7 +134,7 @@
   pointer-events: all;
 }
 
-.irc-bottom {
+.irc-upper {
   background: var(--irc-surface);
   backdrop-filter: var(--irc-blur);
   -webkit-backdrop-filter: var(--irc-blur);
@@ -155,8 +156,8 @@
     transform var(--irc-normal) ease;
 }
 
-*:hover > .irc-controls .irc-bottom,
-.irc-controls:hover .irc-bottom {
+*:hover > .irc-controls .irc-upper,
+.irc-controls:hover .irc-upper {
   opacity: 1;
   max-height: 50px;
   padding: 5px 10px;
