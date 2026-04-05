@@ -115,7 +115,6 @@
   pointer-events: all;
 }
 
-*:hover > .irc-controls .irc-seek-thumb,
 .irc-controls:hover .irc-seek-thumb {
   opacity: 1;
 }
@@ -183,7 +182,7 @@
 .irc-vol-group {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
   padding: 4px 0;
   margin: -4px 0;
 
@@ -191,10 +190,6 @@
     width: 60px;
     opacity: 1;
     pointer-events: all;
-  }
-
-  &:hover .irc-vol-thumb {
-    opacity: 1;
   }
 }
 
@@ -236,9 +231,7 @@
   border-radius: 50%;
   background: #fff;
   transform: translate(-50%, -50%);
-  opacity: 0;
   pointer-events: none;
-  transition: opacity var(--irc-fast) ease;
 }
 
 .irc-time {
