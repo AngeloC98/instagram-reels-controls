@@ -28,15 +28,9 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 export function createControlsDOM(): ControlElements {
   const playBtn = el('button', { className: 'irc-btn irc-playpause', title: 'Play/Pause' })
   const muteBtn = el('button', { className: 'irc-btn irc-mute', title: 'Mute/Unmute' })
-  const volumeBar = el('input', {
-    className: 'irc-volume',
-    type: 'range',
-    min: '0',
-    max: '1',
-    step: '0.02',
-    value: '1',
-    title: 'Volume',
-  })
+  const volFill = el('div', { className: 'irc-vol-fill' })
+  const volThumb = el('div', { className: 'irc-vol-thumb' })
+  const volTrack = el('div', { className: 'irc-volume' }, [volFill, volThumb])
   const timeLabel = el('span', { className: 'irc-time', textContent: '0:00 / 0:00' })
   const speedBtn = el('button', {
     className: 'irc-speed-btn',
@@ -57,34 +51,33 @@ export function createControlsDOM(): ControlElements {
     ...speedOptions,
   ])
 
-  const seekBar = el('input', {
-    className: 'irc-seek',
-    type: 'range',
-    min: '0',
-    max: '100',
-    value: '0',
-    step: '0.1',
-  })
+  const seekFill = el('div', { className: 'irc-seek-fill' })
+  const seekThumb = el('div', { className: 'irc-seek-thumb' })
+  const seekTrack = el('div', { className: 'irc-seek' }, [seekFill, seekThumb])
 
   const bar = el('div', { className: CONTROLS_CLASS }, [
-    el('div', { className: 'irc-row irc-bottom' }, [
+    el('div', { className: 'irc-row irc-upper' }, [
       playBtn,
-      el('div', { className: 'irc-vol-group' }, [muteBtn, volumeBar]),
+      el('div', { className: 'irc-vol-group' }, [muteBtn, volTrack]),
       timeLabel,
       el('div', { className: 'irc-speed-wrap' }, [speedBtn, speedMenu]),
     ]),
-    el('div', { className: 'irc-row irc-top' }, [seekBar]),
+    el('div', { className: 'irc-row irc-lower' }, [seekTrack]),
   ])
 
   return {
     bar,
     playBtn,
-    seekBar,
+    seekTrack,
+    seekFill,
+    seekThumb,
     timeLabel,
     speedBtn,
     speedMenu,
     speedOptions,
     muteBtn,
-    volumeBar,
+    volTrack,
+    volFill,
+    volThumb,
   }
 }

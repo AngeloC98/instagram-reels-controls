@@ -1,13 +1,17 @@
 export interface ControlElements {
   bar: HTMLDivElement
   playBtn: HTMLButtonElement
-  seekBar: HTMLInputElement
+  seekTrack: HTMLDivElement
+  seekFill: HTMLDivElement
+  seekThumb: HTMLDivElement
   timeLabel: HTMLSpanElement
   speedBtn: HTMLButtonElement
   speedMenu: HTMLDivElement
   speedOptions: HTMLDivElement[]
   muteBtn: HTMLButtonElement
-  volumeBar: HTMLInputElement
+  volTrack: HTMLDivElement
+  volFill: HTMLDivElement
+  volThumb: HTMLDivElement
 }
 
 export interface SyncHandlers {

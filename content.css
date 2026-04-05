@@ -23,27 +23,29 @@
   --irc-normal: 0.25s;
 }
 
+/* Resting: seek bar visible at top, full width, 3px */
+/* Hover: slides to inset position, buttons appear, seek grows to 5px */
 .irc-controls {
   user-select: none;
   position: absolute;
-  top: 12px;
-  left: 10px;
-  right: 10px;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  opacity: 0;
-  transform: translateY(-6px);
-  transition:
-    opacity var(--irc-normal) ease,
-    transform var(--irc-normal) ease;
   pointer-events: none;
+  transition:
+    top var(--irc-normal) ease,
+    left var(--irc-normal) ease,
+    right var(--irc-normal) ease;
 }
 
 *:hover > .irc-controls,
 .irc-controls:hover {
-  opacity: 1;
-  transform: translateY(0);
+  top: 12px;
+  left: 10px;
+  right: 10px;
   pointer-events: all;
 }
 
@@ -52,86 +54,117 @@
   align-items: center;
 }
 
-.irc-top {
+.irc-lower {
   width: 100%;
-  margin-top: 5px;
-  padding: 0 2px;
+  margin-top: 0;
+  padding: 0;
   box-sizing: border-box;
+  transition:
+    margin-top var(--irc-normal) ease,
+    padding var(--irc-normal) ease;
+}
+
+*:hover > .irc-controls .irc-lower,
+.irc-controls:hover .irc-lower {
+  margin-top: 8px;
+  padding: 0 2px;
 }
 
 .irc-seek {
+  position: relative;
   width: 100%;
   height: 3px;
-  appearance: none;
   background: var(--irc-track);
   border-radius: 3px;
-  outline: none;
   cursor: pointer;
-  display: block;
-  transition: height var(--irc-fast);
+  pointer-events: none;
+  transition: height var(--irc-fast) ease;
+}
 
-  &:hover {
-    height: 5px;
-  }
+.irc-seek-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--irc-accent-gradient);
+  pointer-events: none;
+  transition: width 50ms linear;
+}
 
-  /* WebKit */
-  &::-webkit-slider-thumb {
-    -webkit-appearance: none;
+.irc-seek-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  transition:
+    left 50ms linear,
+    opacity var(--irc-fast) ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
     width: 13px;
     height: 13px;
     border-radius: 50%;
     background: var(--irc-accent);
     border: 2px solid #fff;
-    cursor: pointer;
     box-shadow: 0 1px 4px var(--irc-shadow-thumb);
-    margin-top: -5px;
-    opacity: 0;
-    transition: opacity var(--irc-fast);
-  }
-
-  &:hover::-webkit-slider-thumb {
-    opacity: 1;
-  }
-
-  &::-webkit-slider-runnable-track {
-    height: inherit;
-    border-radius: 3px;
-  }
-
-  /* Firefox */
-  &::-moz-range-thumb {
-    width: 13px;
-    height: 13px;
-    border-radius: 50%;
-    background: var(--irc-accent);
-    border: 2px solid #fff;
-    cursor: pointer;
-    box-shadow: 0 1px 4px var(--irc-shadow-thumb);
-    opacity: 0;
-    transition: opacity var(--irc-fast);
-  }
-
-  &:hover::-moz-range-thumb {
-    opacity: 1;
-  }
-
-  &::-moz-range-progress {
-    background: var(--irc-accent-gradient);
-    border-radius: 3px;
+    transform: translate(-50%, -50%);
   }
 }
 
-.irc-bottom {
+*:hover > .irc-controls .irc-seek,
+.irc-controls:hover .irc-seek {
+  height: 5px;
+  pointer-events: all;
+}
+
+.irc-controls:hover .irc-seek-thumb {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.irc-upper {
   background: var(--irc-surface);
   backdrop-filter: var(--irc-blur);
   -webkit-backdrop-filter: var(--irc-blur);
   border-radius: var(--irc-radius-pill);
-  padding: 5px 10px;
+  padding: 0 10px;
   gap: 4px;
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--irc-border);
+  border: none;
   box-shadow: inset 0 1px 0 var(--irc-shadow-light);
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transform: translateY(-6px);
+  transition:
+    opacity var(--irc-normal) ease,
+    max-height var(--irc-normal) ease,
+    padding var(--irc-normal) ease,
+    transform var(--irc-normal) ease;
+}
+
+*:hover > .irc-controls .irc-upper,
+.irc-controls:hover .irc-upper {
+  opacity: 1;
+  max-height: 50px;
+  padding: 5px 10px;
+  border: 1px solid var(--irc-border);
+  transform: translateY(0);
+  overflow: visible;
+  z-index: 1;
 }
 
 .irc-btn {
@@ -166,7 +199,7 @@
 .irc-vol-group {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
   padding: 4px 0;
   margin: -4px 0;
 
@@ -175,17 +208,20 @@
     opacity: 1;
     pointer-events: all;
   }
+
+  &:hover .irc-vol-thumb {
+    pointer-events: all;
+  }
 }
 
 .irc-volume {
+  position: relative;
   width: 0;
   opacity: 0;
   pointer-events: none;
   height: 3px;
-  appearance: none;
   background: var(--irc-track);
   border-radius: 3px;
-  outline: none;
   cursor: pointer;
   flex-shrink: 0;
   transition:
@@ -193,58 +229,42 @@
     opacity var(--irc-normal) ease,
     height var(--irc-fast);
 
-  &:focus {
-    width: 60px;
-    opacity: 1;
-    pointer-events: all;
-  }
-
   &:hover {
     height: 5px;
   }
+}
 
-  /* WebKit */
-  &::-webkit-slider-thumb {
-    -webkit-appearance: none;
+.irc-vol-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: #fff;
+  pointer-events: none;
+}
+
+.irc-vol-thumb {
+  position: absolute;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  cursor: pointer;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
     width: 11px;
     height: 11px;
     border-radius: 50%;
     background: #fff;
-    border: none;
-    cursor: pointer;
-    margin-top: -4px;
-    opacity: 0;
-    transition: opacity var(--irc-fast);
-  }
-
-  &:hover::-webkit-slider-thumb {
-    opacity: 1;
-  }
-
-  &::-webkit-slider-runnable-track {
-    height: inherit;
-    border-radius: 3px;
-  }
-
-  /* Firefox */
-  &::-moz-range-thumb {
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    background: #fff;
-    border: none;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity var(--irc-fast);
-  }
-
-  &:hover::-moz-range-thumb {
-    opacity: 1;
-  }
-
-  &::-moz-range-progress {
-    background: #fff;
-    border-radius: 3px;
+    transform: translate(-50%, -50%);
   }
 }
 

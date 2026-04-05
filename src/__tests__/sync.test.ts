@@ -23,17 +23,20 @@ function mockVideo(overrides: Partial<HTMLVideoElement> = {}): HTMLVideoElement 
 
 function mockEls(): ControlElements {
   const makeBtn = (): HTMLButtonElement => document.createElement('button')
-  const makeInput = (): HTMLInputElement => document.createElement('input')
   return {
     bar: document.createElement('div'),
     playBtn: makeBtn(),
-    seekBar: makeInput(),
+    seekTrack: document.createElement('div'),
+    seekFill: document.createElement('div'),
+    seekThumb: document.createElement('div'),
     timeLabel: document.createElement('span'),
     speedBtn: makeBtn(),
     speedMenu: document.createElement('div'),
     speedOptions: [],
     muteBtn: makeBtn(),
-    volumeBar: makeInput(),
+    volTrack: document.createElement('div'),
+    volFill: document.createElement('div'),
+    volThumb: document.createElement('div'),
   }
 }
 
@@ -65,12 +68,20 @@ describe('createSyncHandlers', () => {
     expect(img?.src).toContain('vol-mute.svg')
   })
 
-  it('updateSeek sets seekBar value correctly', () => {
+  it('updateSeek sets seek fill width correctly', () => {
     const video = mockVideo({ currentTime: 50, duration: 100, paused: false })
     const els = mockEls()
     const handlers = createSyncHandlers(video, els)
     handlers.updateSeek()
-    expect(els.seekBar.value).toBe('50')
+    expect(els.seekFill.style.width).toBe('50%')
+  })
+
+  it('updateSeek sets seek thumb position correctly', () => {
+    const video = mockVideo({ currentTime: 50, duration: 100, paused: false })
+    const els = mockEls()
+    const handlers = createSyncHandlers(video, els)
+    handlers.updateSeek()
+    expect(els.seekThumb.style.left).toBe('50%')
   })
 
   it('updateSeek skips when scrubbing is true', () => {
@@ -79,6 +90,6 @@ describe('createSyncHandlers', () => {
     const handlers = createSyncHandlers(video, els)
     handlers.scrubbing = true
     handlers.updateSeek()
-    expect(els.seekBar.value).toBe('')
+    expect(els.seekFill.style.width).toBe('')
   })
 })

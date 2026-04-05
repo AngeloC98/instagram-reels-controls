@@ -9,7 +9,7 @@ import {
   setUserInteracted,
   savePrefs,
 } from './preferences'
-import { seekGradient, formatTime } from './sync'
+import { setSliderPosition, formatTime } from './sync'
 
 export function wireEvents(
   video: HTMLVideoElement,
@@ -21,13 +21,17 @@ export function wireEvents(
   const {
     bar,
     playBtn,
-    seekBar,
+    seekTrack,
+    seekFill,
+    seekThumb,
     timeLabel,
     speedBtn,
     speedMenu,
     speedOptions,
     muteBtn,
-    volumeBar,
+    volTrack,
+    volFill,
+    volThumb,
   } = els
 
   // Stop clicks from reaching Instagram's handlers (which toggle play/mute)
@@ -43,16 +47,6 @@ export function wireEvents(
     'pointerdown',
     (e) => {
       e.stopPropagation()
-    },
-    { signal: sig },
-  )
-  bar.addEventListener(
-    'pointerup',
-    (e) => {
-      if ((e.target as HTMLElement).matches('input[type="range"]'))
-        setTimeout(() => {
-          ;(e.target as HTMLElement).blur()
-        }, 0)
     },
     { signal: sig },
   )
@@ -99,45 +93,46 @@ export function wireEvents(
   )
 
   let wasPlaying = false
-  seekBar.addEventListener(
+
+  function seekToPointer(e: PointerEvent): void {
+    const rect = seekTrack.getBoundingClientRect()
+    const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
+    if (video.duration) {
+      video.currentTime = (pct / 100) * video.duration
+      setSliderPosition(seekFill, seekThumb, pct)
+      timeLabel.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`
+    }
+  }
+
+  seekTrack.addEventListener(
     'pointerdown',
-    () => {
+    (e) => {
+      e.stopPropagation()
+      e.preventDefault()
       sync.scrubbing = true
       wasPlaying = !video.paused
       if (wasPlaying) video.pause()
+      seekToPointer(e)
+      seekTrack.setPointerCapture(e.pointerId)
     },
     { signal: sig },
   )
-  seekBar.addEventListener(
-    'input',
+  seekTrack.addEventListener(
+    'pointermove',
     (e) => {
-      e.stopPropagation()
-      if (video.duration) {
-        video.currentTime = (Number(seekBar.value) / 100) * video.duration
-        seekBar.style.background = seekGradient(Number(seekBar.value))
-        timeLabel.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`
-      }
+      if (sync.scrubbing) seekToPointer(e)
     },
     { signal: sig },
   )
-  document.addEventListener(
-    'pointerup',
-    () => {
-      if (sync.scrubbing) {
-        sync.scrubbing = false
-        if (wasPlaying) void video.play()
-      }
-    },
-    { signal: sig },
-  )
-  seekBar.addEventListener(
-    'click',
-    (e) => {
-      e.stopPropagation()
-    },
-    { signal: sig },
-  )
-
+  const endSeekDrag = (e: PointerEvent) => {
+    if (sync.scrubbing) {
+      sync.scrubbing = false
+      seekTrack.releasePointerCapture(e.pointerId)
+      if (wasPlaying) void video.play()
+    }
+  }
+  seekTrack.addEventListener('pointerup', endSeekDrag, { signal: sig })
+  seekTrack.addEventListener('pointercancel', endSeekDrag, { signal: sig })
   speedBtn.addEventListener(
     'click',
     (e) => {
@@ -171,29 +166,60 @@ export function wireEvents(
     'click',
     (e) => {
       e.stopPropagation()
+      e.preventDefault()
       setUserInteracted()
+      if (video.muted && preferredVolume === 0) {
+        setVolume(0.1)
+        video.volume = 0.1
+      }
       setMuted(!video.muted)
       video.muted = preferredMuted
+      sync.updateMute()
       savePrefs()
     },
     { signal: sig },
   )
 
-  volumeBar.addEventListener(
-    'input',
+  function volToPointer(e: PointerEvent): void {
+    const rect = volTrack.getBoundingClientRect()
+    const vol = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    setUserInteracted()
+    setVolume(vol)
+    setMuted(vol === 0)
+    video.volume = vol
+    video.muted = preferredMuted
+    setSliderPosition(volFill, volThumb, vol * 100)
+  }
+
+  let volDragging = false
+  volTrack.addEventListener(
+    'pointerdown',
     (e) => {
       e.stopPropagation()
-      setUserInteracted()
-      const vol = parseFloat(volumeBar.value)
-      setVolume(vol)
-      setMuted(vol === 0)
-      video.volume = vol
-      video.muted = preferredMuted
-      savePrefs()
+      e.preventDefault()
+      volDragging = true
+      volToPointer(e)
+      volTrack.setPointerCapture(e.pointerId)
     },
     { signal: sig },
   )
-  volumeBar.addEventListener(
+  volTrack.addEventListener(
+    'pointermove',
+    (e) => {
+      if (volDragging) volToPointer(e)
+    },
+    { signal: sig },
+  )
+  const endVolDrag = (e: PointerEvent) => {
+    if (volDragging) {
+      volDragging = false
+      volTrack.releasePointerCapture(e.pointerId)
+      savePrefs()
+    }
+  }
+  volTrack.addEventListener('pointerup', endVolDrag, { signal: sig })
+  volTrack.addEventListener('pointercancel', endVolDrag, { signal: sig })
+  volTrack.addEventListener(
     'click',
     (e) => {
       e.stopPropagation()
