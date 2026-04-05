@@ -57,14 +57,9 @@ export function createControlsDOM(): ControlElements {
     ...speedOptions,
   ])
 
-  const seekBar = el('input', {
-    className: 'irc-seek',
-    type: 'range',
-    min: '0',
-    max: '100',
-    value: '0',
-    step: '0.1',
-  })
+  const seekFill = el('div', { className: 'irc-seek-fill' })
+  const seekThumb = el('div', { className: 'irc-seek-thumb' })
+  const seekTrack = el('div', { className: 'irc-seek' }, [seekFill, seekThumb])
 
   const bar = el('div', { className: CONTROLS_CLASS }, [
     el('div', { className: 'irc-row irc-bottom' }, [
@@ -73,13 +68,15 @@ export function createControlsDOM(): ControlElements {
       timeLabel,
       el('div', { className: 'irc-speed-wrap' }, [speedBtn, speedMenu]),
     ]),
-    el('div', { className: 'irc-row irc-top' }, [seekBar]),
+    el('div', { className: 'irc-row irc-top' }, [seekTrack]),
   ])
 
   return {
     bar,
     playBtn,
-    seekBar,
+    seekTrack,
+    seekFill,
+    seekThumb,
     timeLabel,
     speedBtn,
     speedMenu,

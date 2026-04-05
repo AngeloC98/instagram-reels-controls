@@ -9,7 +9,7 @@ import {
   setUserInteracted,
   savePrefs,
 } from './preferences'
-import { seekGradient, formatTime } from './sync'
+import { setSeekPosition, formatTime } from './sync'
 
 export function wireEvents(
   video: HTMLVideoElement,
@@ -21,7 +21,9 @@ export function wireEvents(
   const {
     bar,
     playBtn,
-    seekBar,
+    seekTrack,
+    seekFill,
+    seekThumb,
     timeLabel,
     speedBtn,
     speedMenu,
@@ -99,45 +101,48 @@ export function wireEvents(
   )
 
   let wasPlaying = false
-  seekBar.addEventListener(
+
+  function seekToPointer(e: PointerEvent): void {
+    const rect = seekTrack.getBoundingClientRect()
+    const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
+    if (video.duration) {
+      video.currentTime = (pct / 100) * video.duration
+      setSeekPosition(seekFill, seekThumb, pct)
+      timeLabel.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`
+    }
+  }
+
+  seekTrack.addEventListener(
     'pointerdown',
-    () => {
+    (e) => {
+      e.stopPropagation()
+      e.preventDefault()
       sync.scrubbing = true
       wasPlaying = !video.paused
       if (wasPlaying) video.pause()
+      seekToPointer(e)
+      seekTrack.setPointerCapture(e.pointerId)
     },
     { signal: sig },
   )
-  seekBar.addEventListener(
-    'input',
+  seekTrack.addEventListener(
+    'pointermove',
     (e) => {
-      e.stopPropagation()
-      if (video.duration) {
-        video.currentTime = (Number(seekBar.value) / 100) * video.duration
-        seekBar.style.background = seekGradient(Number(seekBar.value))
-        timeLabel.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`
-      }
+      if (sync.scrubbing) seekToPointer(e)
     },
     { signal: sig },
   )
-  document.addEventListener(
+  seekTrack.addEventListener(
     'pointerup',
-    () => {
+    (e) => {
       if (sync.scrubbing) {
         sync.scrubbing = false
+        seekTrack.releasePointerCapture(e.pointerId)
         if (wasPlaying) void video.play()
       }
     },
     { signal: sig },
   )
-  seekBar.addEventListener(
-    'click',
-    (e) => {
-      e.stopPropagation()
-    },
-    { signal: sig },
-  )
-
   speedBtn.addEventListener(
     'click',
     (e) => {
