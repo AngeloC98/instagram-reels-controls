@@ -15,13 +15,7 @@ export function findInstagramVideos(root: ParentNode = document): HTMLVideoEleme
 }
 
 export function prepareInstagramMount(video: HTMLVideoElement): HTMLElement | null {
-  const mount = video.parentElement
-  if (!mount) return null
-
-  mount.style.position = 'relative'
-  mount.style.overflow = 'hidden'
-
-  return mount
+  return video.parentElement
 }
 
 interface StartInstagramIntegrationOptions {

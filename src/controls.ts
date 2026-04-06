@@ -29,6 +29,9 @@ export function buildControls(
 ): void {
   if (injected.has(video)) return
 
+  mount.style.position = 'relative'
+  mount.style.overflow = 'hidden'
+
   const ac = new AbortController()
   const els = createControlsDOM()
   const sync = createSyncHandlers(video, els)

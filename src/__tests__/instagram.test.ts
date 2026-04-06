@@ -47,7 +47,7 @@ describe('instagram adapter', () => {
     mount.appendChild(video)
 
     expect(prepareInstagramMount(video)).toBe(mount)
-    expect(mount.style.position).toBe('relative')
-    expect(mount.style.overflow).toBe('hidden')
+    expect(mount.style.position).toBe('')
+    expect(mount.style.overflow).toBe('')
   })
 })
