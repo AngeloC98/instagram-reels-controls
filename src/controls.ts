@@ -24,21 +24,17 @@ function applyPreferences(
 
 export function buildControls(
   video: HTMLVideoElement,
+  mount: HTMLElement,
   preferences: PreferenceStore = preferenceStore,
 ): void {
   if (injected.has(video)) return
-
-  const wrapper = video.parentElement
-  if (!wrapper) return
-  wrapper.style.position = 'relative'
-  wrapper.style.overflow = 'hidden'
 
   const ac = new AbortController()
   const els = createControlsDOM()
   const sync = createSyncHandlers(video, els)
   const tickLoop = createTickLoop(sync.updateSeek)
 
-  wrapper.appendChild(els.bar)
+  mount.appendChild(els.bar)
   wireEvents(video, els, sync, tickLoop, preferences, ac.signal)
   applyPreferences(video, els, preferences)
   sync.updatePlayButton()

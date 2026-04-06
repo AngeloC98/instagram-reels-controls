@@ -51,11 +51,12 @@ src/
   types.ts         - shared TypeScript interfaces
   icons.ts         - icon URLs + setIcon helper
   preferences.ts   - storage load/save + state
+  instagram.ts     - Instagram page integration + video discovery
   dom.ts           - DOM builder + controls creation
   sync.ts          - video-to-UI state sync + tick loop
   events.ts        - event listener wiring
-  controls.ts      - orchestrator (buildControls)
-  index.ts         - entry point (MutationObserver + init)
+  controls.ts      - controls orchestrator
+  index.ts         - entry point (adapter startup)
 manifests/
   base.json        - shared manifest fields
   firefox.json     - Firefox-specific overrides
