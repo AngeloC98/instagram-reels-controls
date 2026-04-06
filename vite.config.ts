@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import { resolve } from 'path'
 import { readFileSync, writeFileSync, cpSync, mkdirSync } from 'fs'
 
+type ManifestData = Record<string, unknown>
+
 function getTarget(): string {
   const args = process.argv
   const idx = args.indexOf('--')
@@ -14,6 +16,10 @@ function getTarget(): string {
   return 'firefox'
 }
 
+function readManifest(path: string): ManifestData {
+  return JSON.parse(readFileSync(path, 'utf-8')) as ManifestData
+}
+
 function extensionPlugin(target: string) {
   return {
     name: 'extension-build',
@@ -21,12 +27,8 @@ function extensionPlugin(target: string) {
       const outDir = resolve(import.meta.dirname, `dist/${target}`)
       mkdirSync(outDir, { recursive: true })
 
-      const base = JSON.parse(
-        readFileSync(resolve(import.meta.dirname, 'manifests/base.json'), 'utf-8'),
-      )
-      const override = JSON.parse(
-        readFileSync(resolve(import.meta.dirname, `manifests/${target}.json`), 'utf-8'),
-      )
+      const base = readManifest(resolve(import.meta.dirname, 'manifests/base.json'))
+      const override = readManifest(resolve(import.meta.dirname, `manifests/${target}.json`))
       const manifest = { ...base, ...override }
       writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2))
 

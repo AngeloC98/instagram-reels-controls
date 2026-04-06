@@ -31,3 +31,17 @@ export interface Preferences {
   volume: number
   speed: number
 }
+
+export interface PreferenceSnapshot extends Preferences {
+  userInteracted: boolean
+}
+
+export interface PreferenceStore {
+  ready: Promise<void>
+  getSnapshot: () => PreferenceSnapshot
+  setMuted: (value: boolean) => void
+  setVolume: (value: number) => void
+  setSpeed: (value: number) => void
+  markUserInteracted: () => void
+  save: () => void
+}

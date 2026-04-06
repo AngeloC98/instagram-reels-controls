@@ -1,39 +1,7 @@
-import type { ControlElements, SyncHandlers, TickLoop } from './types'
-import {
-  preferredMuted,
-  preferredVolume,
-  userInteracted,
-  setMuted,
-  setVolume,
-  setSpeed,
-  setUserInteracted,
-  savePrefs,
-} from './preferences'
-import { setSliderPosition, formatTime } from './sync'
+import type { ControlElements, PreferenceStore, SyncHandlers, TickLoop } from './types'
+import { formatTime, setSliderPosition } from './sync'
 
-export function wireEvents(
-  video: HTMLVideoElement,
-  els: ControlElements,
-  sync: SyncHandlers,
-  tickLoop: TickLoop,
-  sig: AbortSignal,
-): void {
-  const {
-    bar,
-    playBtn,
-    seekTrack,
-    seekFill,
-    seekThumb,
-    timeLabel,
-    speedBtn,
-    speedMenu,
-    speedOptions,
-    muteBtn,
-    volTrack,
-    volFill,
-    volThumb,
-  } = els
-
+function bindBarEvents(bar: HTMLDivElement, speedMenu: HTMLDivElement, sig: AbortSignal): void {
   // Stop clicks from reaching Instagram's handlers (which toggle play/mute)
   bar.addEventListener(
     'click',
@@ -43,6 +11,7 @@ export function wireEvents(
     },
     { signal: sig },
   )
+
   bar.addEventListener(
     'pointerdown',
     (e) => {
@@ -50,7 +19,15 @@ export function wireEvents(
     },
     { signal: sig },
   )
+}
 
+function bindVideoSyncEvents(
+  video: HTMLVideoElement,
+  sync: SyncHandlers,
+  tickLoop: TickLoop,
+  preferences: PreferenceStore,
+  sig: AbortSignal,
+): void {
   video.addEventListener('play', sync.updatePlayButton, { signal: sig })
   video.addEventListener('pause', sync.updatePlayButton, { signal: sig })
   video.addEventListener('durationchange', sync.updateSeek, { signal: sig })
@@ -63,6 +40,7 @@ export function wireEvents(
     },
     { signal: sig },
   )
+
   video.addEventListener(
     'pause',
     () => {
@@ -75,13 +53,20 @@ export function wireEvents(
   video.addEventListener(
     'volumechange',
     () => {
-      if (!userInteracted) return
-      if (video.muted !== preferredMuted) video.muted = preferredMuted
-      if (video.volume !== preferredVolume) video.volume = preferredVolume
+      const snapshot = preferences.getSnapshot()
+      if (!snapshot.userInteracted) return
+      if (video.muted !== snapshot.muted) video.muted = snapshot.muted
+      if (video.volume !== snapshot.volume) video.volume = snapshot.volume
     },
     { signal: sig },
   )
+}
 
+function bindPlayButton(
+  video: HTMLVideoElement,
+  playBtn: HTMLButtonElement,
+  sig: AbortSignal,
+): void {
   playBtn.addEventListener(
     'click',
     (e) => {
@@ -91,7 +76,17 @@ export function wireEvents(
     },
     { signal: sig },
   )
+}
 
+function bindSeekEvents(
+  video: HTMLVideoElement,
+  seekTrack: HTMLDivElement,
+  seekFill: HTMLDivElement,
+  seekThumb: HTMLDivElement,
+  timeLabel: HTMLSpanElement,
+  sync: SyncHandlers,
+  sig: AbortSignal,
+): void {
   let wasPlaying = false
 
   function seekToPointer(e: PointerEvent): void {
@@ -117,6 +112,7 @@ export function wireEvents(
     },
     { signal: sig },
   )
+
   seekTrack.addEventListener(
     'pointermove',
     (e) => {
@@ -124,6 +120,7 @@ export function wireEvents(
     },
     { signal: sig },
   )
+
   const endSeekDrag = (e: PointerEvent) => {
     if (sync.scrubbing) {
       sync.scrubbing = false
@@ -131,8 +128,19 @@ export function wireEvents(
       if (wasPlaying) void video.play()
     }
   }
+
   seekTrack.addEventListener('pointerup', endSeekDrag, { signal: sig })
   seekTrack.addEventListener('pointercancel', endSeekDrag, { signal: sig })
+}
+
+function bindSpeedEvents(
+  video: HTMLVideoElement,
+  speedBtn: HTMLButtonElement,
+  speedMenu: HTMLDivElement,
+  speedOptions: HTMLDivElement[],
+  preferences: PreferenceStore,
+  sig: AbortSignal,
+): void {
   speedBtn.addEventListener(
     'click',
     (e) => {
@@ -149,49 +157,73 @@ export function wireEvents(
         e.stopPropagation()
         const speed = parseFloat(opt.dataset.speed ?? '1')
         video.playbackRate = speed
-        setSpeed(speed)
+        preferences.setSpeed(speed)
         speedBtn.textContent = opt.textContent
-        speedOptions.forEach((o) => {
-          o.classList.remove('irc-speed-active')
+        speedOptions.forEach((option) => {
+          option.classList.remove('irc-speed-active')
         })
         opt.classList.add('irc-speed-active')
         speedMenu.hidden = true
-        savePrefs()
+        preferences.save()
       },
       { signal: sig },
     )
   })
+}
 
+function bindMuteEvents(
+  video: HTMLVideoElement,
+  muteBtn: HTMLButtonElement,
+  sync: SyncHandlers,
+  preferences: PreferenceStore,
+  sig: AbortSignal,
+): void {
   muteBtn.addEventListener(
     'click',
     (e) => {
       e.stopPropagation()
       e.preventDefault()
-      setUserInteracted()
-      if (video.muted && preferredVolume === 0) {
-        setVolume(0.1)
+
+      const snapshot = preferences.getSnapshot()
+      preferences.markUserInteracted()
+
+      if (video.muted && snapshot.volume === 0) {
+        preferences.setVolume(0.1)
         video.volume = 0.1
       }
-      setMuted(!video.muted)
-      video.muted = preferredMuted
+
+      preferences.setMuted(!video.muted)
+      video.muted = preferences.getSnapshot().muted
       sync.updateMute()
-      savePrefs()
+      preferences.save()
     },
     { signal: sig },
   )
+}
 
+function bindVolumeEvents(
+  video: HTMLVideoElement,
+  volTrack: HTMLDivElement,
+  volFill: HTMLDivElement,
+  volThumb: HTMLDivElement,
+  preferences: PreferenceStore,
+  sig: AbortSignal,
+): void {
   function volToPointer(e: PointerEvent): void {
     const rect = volTrack.getBoundingClientRect()
     const vol = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-    setUserInteracted()
-    setVolume(vol)
-    setMuted(vol === 0)
+
+    preferences.markUserInteracted()
+    preferences.setVolume(vol)
+    preferences.setMuted(vol === 0)
+
     video.volume = vol
-    video.muted = preferredMuted
+    video.muted = preferences.getSnapshot().muted
     setSliderPosition(volFill, volThumb, vol * 100)
   }
 
   let volDragging = false
+
   volTrack.addEventListener(
     'pointerdown',
     (e) => {
@@ -203,6 +235,7 @@ export function wireEvents(
     },
     { signal: sig },
   )
+
   volTrack.addEventListener(
     'pointermove',
     (e) => {
@@ -210,13 +243,15 @@ export function wireEvents(
     },
     { signal: sig },
   )
+
   const endVolDrag = (e: PointerEvent) => {
     if (volDragging) {
       volDragging = false
       volTrack.releasePointerCapture(e.pointerId)
-      savePrefs()
+      preferences.save()
     }
   }
+
   volTrack.addEventListener('pointerup', endVolDrag, { signal: sig })
   volTrack.addEventListener('pointercancel', endVolDrag, { signal: sig })
   volTrack.addEventListener(
@@ -226,4 +261,21 @@ export function wireEvents(
     },
     { signal: sig },
   )
+}
+
+export function wireEvents(
+  video: HTMLVideoElement,
+  els: ControlElements,
+  sync: SyncHandlers,
+  tickLoop: TickLoop,
+  preferences: PreferenceStore,
+  sig: AbortSignal,
+): void {
+  bindBarEvents(els.bar, els.speedMenu, sig)
+  bindVideoSyncEvents(video, sync, tickLoop, preferences, sig)
+  bindPlayButton(video, els.playBtn, sig)
+  bindSeekEvents(video, els.seekTrack, els.seekFill, els.seekThumb, els.timeLabel, sync, sig)
+  bindSpeedEvents(video, els.speedBtn, els.speedMenu, els.speedOptions, preferences, sig)
+  bindMuteEvents(video, els.muteBtn, sync, preferences, sig)
+  bindVolumeEvents(video, els.volTrack, els.volFill, els.volThumb, preferences, sig)
 }

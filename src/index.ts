@@ -1,4 +1,4 @@
-import { prefsReady } from './preferences'
+import { preferenceStore } from './preferences'
 import { buildControls, cleanupRemovedVideos } from './controls'
 
 document.addEventListener('click', () => {
@@ -25,7 +25,7 @@ const observer = new MutationObserver((mutations) => {
   }
 })
 
-void prefsReady.then(() => {
+void preferenceStore.ready.then(() => {
   const root = document.body
   observer.observe(root, { childList: true, subtree: true })
   findAndInjectReelVideos()

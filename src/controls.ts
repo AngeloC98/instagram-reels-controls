@@ -1,22 +1,31 @@
-import type { ControlElements } from './types'
+import type { ControlElements, PreferenceStore } from './types'
 import { createControlsDOM } from './dom'
 import { createSyncHandlers, createTickLoop } from './sync'
 import { wireEvents } from './events'
-import { preferredVolume, preferredSpeed } from './preferences'
+import { preferenceStore } from './preferences'
 
 const injected = new WeakMap<HTMLVideoElement, () => void>()
 
-function applyPreferences(video: HTMLVideoElement, els: ControlElements): void {
+function applyPreferences(
+  video: HTMLVideoElement,
+  els: ControlElements,
+  preferences: PreferenceStore,
+): void {
+  const snapshot = preferences.getSnapshot()
+
   // Mute state applied on play event to avoid breaking autoplay policy
-  video.volume = preferredVolume
-  video.playbackRate = preferredSpeed
-  els.speedBtn.textContent = `${String(preferredSpeed)}\u00D7`
+  video.volume = snapshot.volume
+  video.playbackRate = snapshot.speed
+  els.speedBtn.textContent = `${String(snapshot.speed)}\u00D7`
   els.speedOptions.forEach((o) => {
-    o.classList.toggle('irc-speed-active', parseFloat(o.dataset.speed ?? '1') === preferredSpeed)
+    o.classList.toggle('irc-speed-active', parseFloat(o.dataset.speed ?? '1') === snapshot.speed)
   })
 }
 
-export function buildControls(video: HTMLVideoElement): void {
+export function buildControls(
+  video: HTMLVideoElement,
+  preferences: PreferenceStore = preferenceStore,
+): void {
   if (injected.has(video)) return
 
   const wrapper = video.parentElement
@@ -30,8 +39,8 @@ export function buildControls(video: HTMLVideoElement): void {
   const tickLoop = createTickLoop(sync.updateSeek)
 
   wrapper.appendChild(els.bar)
-  wireEvents(video, els, sync, tickLoop, ac.signal)
-  applyPreferences(video, els)
+  wireEvents(video, els, sync, tickLoop, preferences, ac.signal)
+  applyPreferences(video, els, preferences)
   sync.updatePlayButton()
   sync.updateSeek()
   sync.updateMute()

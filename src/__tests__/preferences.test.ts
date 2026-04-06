@@ -22,29 +22,33 @@ describe('preferences', () => {
   it('loads preferences from storage', async () => {
     mockStorage.get.mockResolvedValue({ muted: false, volume: 0.5, speed: 1.5 })
     const prefs = await import('../preferences')
-    await prefs.prefsReady
-    expect(prefs.preferredMuted).toBe(false)
-    expect(prefs.preferredVolume).toBe(0.5)
-    expect(prefs.preferredSpeed).toBe(1.5)
+    await prefs.preferenceStore.ready
+    expect(prefs.preferenceStore.getSnapshot()).toMatchObject({
+      muted: false,
+      volume: 0.5,
+      speed: 1.5,
+    })
   })
 
   it('uses defaults when storage is empty', async () => {
     mockStorage.get.mockResolvedValue({})
     const prefs = await import('../preferences')
-    await prefs.prefsReady
-    expect(prefs.preferredMuted).toBe(true)
-    expect(prefs.preferredVolume).toBe(1)
-    expect(prefs.preferredSpeed).toBe(1)
+    await prefs.preferenceStore.ready
+    expect(prefs.preferenceStore.getSnapshot()).toMatchObject({
+      muted: true,
+      volume: 1,
+      speed: 1,
+    })
   })
 
   it('debounces saves', async () => {
     vi.useFakeTimers()
     const prefs = await import('../preferences')
-    await prefs.prefsReady
+    await prefs.preferenceStore.ready
 
-    prefs.savePrefs()
-    prefs.savePrefs()
-    prefs.savePrefs()
+    prefs.preferenceStore.save()
+    prefs.preferenceStore.save()
+    prefs.preferenceStore.save()
 
     vi.advanceTimersByTime(300)
 

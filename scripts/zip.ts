@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs'
+import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { resolve, relative, join } from 'path'
 import { deflateRawSync } from 'zlib'
 
@@ -12,9 +12,7 @@ if (!target) {
   process.exit(1)
 }
 
-const base: Manifest = JSON.parse(
-  readFileSync(resolve('manifests/base.json'), 'utf-8'),
-) as Manifest
+const base: Manifest = JSON.parse(readFileSync(resolve('manifests/base.json'), 'utf-8')) as Manifest
 const distDir = resolve(`dist/${target}`)
 const zipName = `instagram-reels-controls-${target}-v${base.version}.zip`
 const zipPath = resolve(`dist/${zipName}`)
@@ -45,8 +43,8 @@ function createZip(files: string[], baseDir: string): Buffer {
 
     // CRC-32
     let crc = ~0
-    for (let i = 0; i < data.length; i++) {
-      crc ^= data[i]!
+    for (const byte of data) {
+      crc ^= byte
       for (let j = 0; j < 8; j++) {
         crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0)
       }
