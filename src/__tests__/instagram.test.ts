@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { findInstagramVideos, isInstagramVideoCandidate, prepareInstagramMount } from '../instagram'
+import { findInstagramVideos, isInstagramVideoCandidate, resolveInstagramMount } from '../instagram'
 
 function setVideoWidth(video: HTMLVideoElement, width: number): void {
   Object.defineProperty(video, 'offsetWidth', {
@@ -40,13 +40,13 @@ describe('instagram adapter', () => {
     expect(findInstagramVideos()).toEqual([largeVideo])
   })
 
-  it('prepares the parent element as the mount target', () => {
+  it('resolves the parent element as the mount target', () => {
     const mount = document.createElement('div')
     const video = document.createElement('video')
 
     mount.appendChild(video)
 
-    expect(prepareInstagramMount(video)).toBe(mount)
+    expect(resolveInstagramMount(video)).toBe(mount)
     expect(mount.style.position).toBe('')
     expect(mount.style.overflow).toBe('')
   })

@@ -14,7 +14,7 @@ export function findInstagramVideos(root: ParentNode = document): HTMLVideoEleme
   return [...root.querySelectorAll('video')].filter(isInstagramVideoCandidate)
 }
 
-export function prepareInstagramMount(video: HTMLVideoElement): HTMLElement | null {
+export function resolveInstagramMount(video: HTMLVideoElement): HTMLElement | null {
   return video.parentElement
 }
 
@@ -29,7 +29,7 @@ export function startInstagramIntegration({
 }: StartInstagramIntegrationOptions): MutationObserver {
   const injectDetectedVideos = (): void => {
     findInstagramVideos().forEach((video) => {
-      const mount = prepareInstagramMount(video)
+      const mount = resolveInstagramMount(video)
       if (mount) onVideoFound(video, mount)
     })
   }
