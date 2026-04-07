@@ -1,32 +1,12 @@
-import { prefsReady } from './preferences'
+import { preferenceStore } from './preferences'
 import { buildControls, cleanupRemovedVideos } from './controls'
+import { startInstagramIntegration } from './instagram'
 
-document.addEventListener('click', () => {
-  document.querySelectorAll<HTMLDivElement>('.irc-speed-menu').forEach((m) => {
-    m.hidden = true
+void preferenceStore.ready.then(() => {
+  startInstagramIntegration({
+    onVideoFound(video, mount) {
+      buildControls(video, mount)
+    },
+    onVideosRemoved: cleanupRemovedVideos,
   })
-})
-
-function findAndInjectReelVideos(): void {
-  document.querySelectorAll('video').forEach((video) => {
-    if (video.offsetWidth > 200) buildControls(video)
-  })
-}
-
-let mutationPending = false
-const observer = new MutationObserver((mutations) => {
-  if (!mutationPending) {
-    mutationPending = true
-    requestAnimationFrame(() => {
-      cleanupRemovedVideos(mutations)
-      findAndInjectReelVideos()
-      mutationPending = false
-    })
-  }
-})
-
-void prefsReady.then(() => {
-  const root = document.body
-  observer.observe(root, { childList: true, subtree: true })
-  findAndInjectReelVideos()
 })

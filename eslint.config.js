@@ -4,16 +4,16 @@ import prettier from 'eslint-config-prettier'
 
 export default [
   {
-    ignores: ['dist/', 'node_modules/', '*.config.*'],
+    ignores: ['dist/', 'node_modules/'],
   },
   ...tseslint.configs['flat/strict-type-checked'],
   ...tseslint.configs['flat/stylistic-type-checked'],
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.ts', 'scripts/**/*.ts', '*.config.ts'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
-        project: './tsconfig.json',
+        project: './tsconfig.eslint.json',
       },
     },
     plugins: {

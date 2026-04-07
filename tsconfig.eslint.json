@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "types": ["vitest/globals", "chrome", "node"]
+  },
+  "include": ["src", "scripts", "vite.config.ts", "vitest.config.ts"]
+}

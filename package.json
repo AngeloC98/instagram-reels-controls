@@ -12,8 +12,8 @@
     "zip:chrome": "tsx scripts/zip.ts chrome",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src/ && prettier --check src/ content.css",
-    "format": "prettier --write src/ content.css",
+    "lint": "eslint src scripts vite.config.ts vitest.config.ts && prettier --check src scripts vite.config.ts vitest.config.ts content.css",
+    "format": "prettier --write src scripts vite.config.ts vitest.config.ts content.css",
     "icons": "tsx scripts/generate-icons.ts"
   },
   "devDependencies": {

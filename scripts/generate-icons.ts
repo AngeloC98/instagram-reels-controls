@@ -12,7 +12,10 @@ async function main(): Promise<void> {
   for (const size of sizes) {
     await page.setViewport({ width: size, height: size })
     await page.goto(svgPath)
-    await page.screenshot({ path: resolve('icons', `icon-${String(size)}.png`), omitBackground: true })
+    await page.screenshot({
+      path: resolve('icons', `icon-${String(size)}.png`),
+      omitBackground: true,
+    })
     console.log(`Saved icon-${String(size)}.png`)
   }
 
