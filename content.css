@@ -48,6 +48,15 @@
   pointer-events: all;
 }
 
+/* Hide Instagram's native volume UI without depending on generated classes or localized labels. */
+[role='slider'][aria-valuemin='0'][aria-valuemax='100'][aria-valuenow] {
+  display: none !important;
+}
+
+[role='button']:has(> svg[role='img'][viewBox='0 0 48 48'][width='16'][height='16']) {
+  display: none !important;
+}
+
 .irc-row {
   display: flex;
   align-items: center;
