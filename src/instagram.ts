@@ -6,8 +6,16 @@ function hideSpeedMenus(): void {
   })
 }
 
-export function isInstagramVideoCandidate(video: HTMLVideoElement): boolean {
+function isInPrimaryInstagramSurface(video: HTMLVideoElement): boolean {
+  return Boolean(video.closest('main'))
+}
+
+function isPlayableMediaSurface(video: HTMLVideoElement): boolean {
   return video.offsetWidth > MIN_VIDEO_WIDTH
+}
+
+export function isInstagramVideoCandidate(video: HTMLVideoElement): boolean {
+  return isInPrimaryInstagramSurface(video) && isPlayableMediaSurface(video)
 }
 
 export function findInstagramVideos(root: ParentNode = document): HTMLVideoElement[] {

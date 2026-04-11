@@ -8,6 +8,14 @@ function setVideoWidth(video: HTMLVideoElement, width: number): void {
   })
 }
 
+function appendToMain(...nodes: Node[]): HTMLElement {
+  const main = document.createElement('main')
+  main.append(...nodes)
+  document.body.appendChild(main)
+
+  return main
+}
+
 describe('instagram adapter', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
@@ -19,9 +27,19 @@ describe('instagram adapter', () => {
 
     setVideoWidth(smallVideo, 120)
     setVideoWidth(largeVideo, 360)
+    appendToMain(smallVideo, largeVideo)
 
     expect(isInstagramVideoCandidate(smallVideo)).toBe(false)
     expect(isInstagramVideoCandidate(largeVideo)).toBe(true)
+  })
+
+  it('ignores videos outside the main Instagram surface', () => {
+    const popupVideo = document.createElement('video')
+
+    setVideoWidth(popupVideo, 360)
+    document.body.appendChild(popupVideo)
+
+    expect(isInstagramVideoCandidate(popupVideo)).toBe(false)
   })
 
   it('finds only eligible instagram videos', () => {
@@ -35,7 +53,7 @@ describe('instagram adapter', () => {
 
     smallWrapper.appendChild(smallVideo)
     largeWrapper.appendChild(largeVideo)
-    document.body.append(smallWrapper, largeWrapper)
+    appendToMain(smallWrapper, largeWrapper)
 
     expect(findInstagramVideos()).toEqual([largeVideo])
   })
