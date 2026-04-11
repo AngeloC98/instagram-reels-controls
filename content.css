@@ -96,7 +96,6 @@
   border-radius: inherit;
   background: var(--irc-accent-gradient);
   pointer-events: none;
-  transition: width 50ms linear;
 }
 
 .irc-seek-thumb {
@@ -111,9 +110,7 @@
   opacity: 0;
   pointer-events: none;
   cursor: pointer;
-  transition:
-    left 50ms linear,
-    opacity var(--irc-fast) ease;
+  transition: opacity 80ms ease;
 
   &::after {
     content: '';
@@ -138,6 +135,7 @@
 .irc-controls.irc-controls-visible .irc-seek-thumb {
   opacity: 1;
   pointer-events: all;
+  transition-delay: 80ms;
 }
 
 .irc-upper {
