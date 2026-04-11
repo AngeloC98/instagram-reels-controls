@@ -49,11 +49,11 @@
 }
 
 /* Hide Instagram's native volume UI without depending on generated classes or localized labels. */
-[role='slider'][aria-valuemin='0'][aria-valuemax='100'][aria-valuenow] {
+main [role='slider'][aria-valuemin='0'][aria-valuemax='100'][aria-valuenow] {
   display: none !important;
 }
 
-[role='button']:has(> svg[role='img'][viewBox='0 0 48 48'][width='16'][height='16']) {
+main [role='button']:has(> svg[role='img'][viewBox='0 0 48 48'][width='16'][height='16']) {
   display: none !important;
 }
 
@@ -337,11 +337,7 @@
     transform var(--irc-fast) ease;
 
   &[hidden] {
-    display: flex;
-    flex-direction: column;
-    opacity: 0;
-    transform: scale(0.92) translateY(-4px);
-    pointer-events: none;
+    display: none;
   }
 }
 

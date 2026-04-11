@@ -22,6 +22,31 @@ export function findInstagramVideos(root: ParentNode = document): HTMLVideoEleme
   return [...root.querySelectorAll('video')].filter(isInstagramVideoCandidate)
 }
 
+function findInstagramVideosInNode(node: Node): HTMLVideoElement[] {
+  if (!(node instanceof Element)) return []
+
+  const videos =
+    node instanceof HTMLVideoElement
+      ? [node]
+      : [...node.querySelectorAll<HTMLVideoElement>('video')]
+
+  return videos.filter(isInstagramVideoCandidate)
+}
+
+function findAddedInstagramVideos(mutations: MutationRecord[]): HTMLVideoElement[] {
+  const videos = new Set<HTMLVideoElement>()
+
+  for (const mutation of mutations) {
+    for (const node of mutation.addedNodes) {
+      findInstagramVideosInNode(node).forEach((video) => {
+        videos.add(video)
+      })
+    }
+  }
+
+  return [...videos]
+}
+
 export function resolveInstagramMount(video: HTMLVideoElement): HTMLElement | null {
   return video.parentElement
 }
@@ -35,24 +60,32 @@ export function startInstagramIntegration({
   onVideoFound,
   onVideosRemoved,
 }: StartInstagramIntegrationOptions): MutationObserver {
-  const injectDetectedVideos = (): void => {
-    findInstagramVideos().forEach((video) => {
+  const injectVideos = (videos: HTMLVideoElement[]): void => {
+    videos.forEach((video) => {
       const mount = resolveInstagramMount(video)
       if (mount) onVideoFound(video, mount)
     })
   }
 
+  const injectDetectedVideos = (): void => {
+    injectVideos(findInstagramVideos())
+  }
+
   document.addEventListener('click', hideSpeedMenus)
 
   let mutationPending = false
+  let pendingMutations: MutationRecord[] = []
   const observer = new MutationObserver((mutations) => {
+    pendingMutations.push(...mutations)
     if (mutationPending) return
 
     mutationPending = true
     requestAnimationFrame(() => {
-      onVideosRemoved(mutations)
-      injectDetectedVideos()
+      const mutationsToProcess = pendingMutations
+      pendingMutations = []
       mutationPending = false
+      onVideosRemoved(mutationsToProcess)
+      injectVideos(findAddedInstagramVideos(mutationsToProcess))
     })
   })
 
