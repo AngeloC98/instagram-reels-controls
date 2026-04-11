@@ -46,8 +46,8 @@ describe('createSyncHandlers', () => {
     const els = mockEls()
     const handlers = createSyncHandlers(video, els)
     handlers.updatePlayButton()
-    const img = els.playBtn.querySelector('img')
-    expect(img?.src).toContain('play.svg')
+    const icon = els.playBtn.querySelector('svg')
+    expect(icon?.classList.contains('lucide-play')).toBe(true)
   })
 
   it('updatePlayButton sets pause icon when playing', () => {
@@ -55,8 +55,8 @@ describe('createSyncHandlers', () => {
     const els = mockEls()
     const handlers = createSyncHandlers(video, els)
     handlers.updatePlayButton()
-    const img = els.playBtn.querySelector('img')
-    expect(img?.src).toContain('pause.svg')
+    const icon = els.playBtn.querySelector('svg')
+    expect(icon?.classList.contains('lucide-pause')).toBe(true)
   })
 
   it('updateMute sets vol-mute icon when muted', () => {
@@ -64,8 +64,8 @@ describe('createSyncHandlers', () => {
     const els = mockEls()
     const handlers = createSyncHandlers(video, els)
     handlers.updateMute()
-    const img = els.muteBtn.querySelector('img')
-    expect(img?.src).toContain('vol-mute.svg')
+    const icon = els.muteBtn.querySelector('svg')
+    expect(icon?.classList.contains('lucide-volume-x')).toBe(true)
   })
 
   it('updateSeek sets seek fill width correctly', () => {
