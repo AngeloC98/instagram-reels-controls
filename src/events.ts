@@ -1,13 +1,117 @@
 import type { ControlElements, PreferenceStore, SyncHandlers, TickLoop } from './types'
 import { formatTime, setSliderPosition } from './sync'
+import {
+  createControlsVisibilityMachine,
+  type ControlsVisibilityMachine,
+} from './controlsVisibility'
 
-function bindBarEvents(bar: HTMLDivElement, speedMenu: HTMLDivElement, sig: AbortSignal): void {
+function setSpeedMenuOpen(
+  speedMenu: HTMLDivElement,
+  visibility: ControlsVisibilityMachine,
+  open: boolean,
+): void {
+  speedMenu.hidden = !open
+  if (open) visibility.pin('menu')
+  else visibility.unpin('menu')
+}
+
+function bindVisibilityEvents(
+  bar: HTMLDivElement,
+  speedMenu: HTMLDivElement,
+  visibility: ControlsVisibilityMachine,
+  sig: AbortSignal,
+): void {
+  const mount = bar.parentElement
+  if (!(mount instanceof HTMLElement)) return
+
+  let keyboardMayFocusControls = false
+
+  const showFromMount = (e: PointerEvent): void => {
+    if (e.target instanceof Node && bar.contains(e.target)) return
+    visibility.activity()
+  }
+
+  const handleMountPointerDown = (e: PointerEvent): void => {
+    showFromMount(e)
+  }
+
+  document.addEventListener(
+    'keydown',
+    () => {
+      keyboardMayFocusControls = true
+    },
+    { capture: true, signal: sig },
+  )
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      keyboardMayFocusControls = false
+      if (!(e.target instanceof Node && bar.contains(e.target))) {
+        setSpeedMenuOpen(speedMenu, visibility, false)
+      }
+    },
+    { capture: true, signal: sig },
+  )
+  mount.addEventListener('pointerenter', showFromMount, { signal: sig })
+  mount.addEventListener('pointermove', showFromMount, { signal: sig })
+  mount.addEventListener('pointerdown', handleMountPointerDown, { signal: sig })
+  mount.addEventListener(
+    'pointerleave',
+    () => {
+      visibility.leavePlayer()
+    },
+    { signal: sig },
+  )
+
+  bar.addEventListener(
+    'pointerenter',
+    () => {
+      visibility.pin('controls-hover')
+    },
+    { signal: sig },
+  )
+
+  bar.addEventListener(
+    'pointerleave',
+    () => {
+      visibility.unpin('controls-hover')
+    },
+    { signal: sig },
+  )
+  bar.addEventListener(
+    'focusin',
+    () => {
+      if (keyboardMayFocusControls) visibility.pin('keyboard-focus')
+      else visibility.activity()
+    },
+    { signal: sig },
+  )
+  bar.addEventListener(
+    'focusout',
+    (e) => {
+      if (e.relatedTarget instanceof Node && bar.contains(e.relatedTarget)) return
+      visibility.unpin('keyboard-focus')
+    },
+    { signal: sig },
+  )
+}
+
+function bindBarEvents(
+  bar: HTMLDivElement,
+  speedMenu: HTMLDivElement,
+  visibility: ControlsVisibilityMachine,
+  sig: AbortSignal,
+): void {
+  const closeSpeedMenu = (): void => {
+    setSpeedMenuOpen(speedMenu, visibility, false)
+  }
+
   // Stop clicks from reaching Instagram's handlers (which toggle play/mute)
   bar.addEventListener(
     'click',
     (e) => {
       e.stopPropagation()
-      if (!(e.target as HTMLElement).closest('.irc-speed-wrap')) speedMenu.hidden = true
+      if (!(e.target as HTMLElement).closest('.irc-speed-wrap')) closeSpeedMenu()
     },
     { signal: sig },
   )
@@ -16,6 +120,7 @@ function bindBarEvents(bar: HTMLDivElement, speedMenu: HTMLDivElement, sig: Abor
     'pointerdown',
     (e) => {
       e.stopPropagation()
+      visibility.activity()
     },
     { signal: sig },
   )
@@ -85,6 +190,7 @@ function bindSeekEvents(
   seekThumb: HTMLDivElement,
   timeLabel: HTMLSpanElement,
   sync: SyncHandlers,
+  visibility: ControlsVisibilityMachine,
   sig: AbortSignal,
 ): void {
   let wasPlaying = false
@@ -105,6 +211,7 @@ function bindSeekEvents(
       e.stopPropagation()
       e.preventDefault()
       sync.scrubbing = true
+      visibility.pin('scrubbing')
       wasPlaying = !video.paused
       if (wasPlaying) video.pause()
       seekToPointer(e)
@@ -126,6 +233,7 @@ function bindSeekEvents(
       sync.scrubbing = false
       seekTrack.releasePointerCapture(e.pointerId)
       if (wasPlaying) void video.play()
+      visibility.unpin('scrubbing')
     }
   }
 
@@ -139,13 +247,15 @@ function bindSpeedEvents(
   speedMenu: HTMLDivElement,
   speedOptions: HTMLDivElement[],
   preferences: PreferenceStore,
+  visibility: ControlsVisibilityMachine,
   sig: AbortSignal,
 ): void {
   speedBtn.addEventListener(
     'click',
     (e) => {
       e.stopPropagation()
-      speedMenu.hidden = !speedMenu.hidden
+      const shouldOpenMenu = speedMenu.hidden !== false
+      setSpeedMenuOpen(speedMenu, visibility, shouldOpenMenu)
     },
     { signal: sig },
   )
@@ -163,7 +273,7 @@ function bindSpeedEvents(
           option.classList.remove('irc-speed-active')
         })
         opt.classList.add('irc-speed-active')
-        speedMenu.hidden = true
+        setSpeedMenuOpen(speedMenu, visibility, false)
         preferences.save()
       },
       { signal: sig },
@@ -207,6 +317,7 @@ function bindVolumeEvents(
   volFill: HTMLDivElement,
   volThumb: HTMLDivElement,
   preferences: PreferenceStore,
+  visibility: ControlsVisibilityMachine,
   sig: AbortSignal,
 ): void {
   function volToPointer(e: PointerEvent): void {
@@ -230,6 +341,7 @@ function bindVolumeEvents(
       e.stopPropagation()
       e.preventDefault()
       volDragging = true
+      visibility.pin('volume-drag')
       volToPointer(e)
       volTrack.setPointerCapture(e.pointerId)
     },
@@ -249,6 +361,7 @@ function bindVolumeEvents(
       volDragging = false
       volTrack.releasePointerCapture(e.pointerId)
       preferences.save()
+      visibility.unpin('volume-drag')
     }
   }
 
@@ -271,11 +384,31 @@ export function wireEvents(
   preferences: PreferenceStore,
   sig: AbortSignal,
 ): void {
-  bindBarEvents(els.bar, els.speedMenu, sig)
+  const visibility = createControlsVisibilityMachine(els.bar, sig)
+
+  bindVisibilityEvents(els.bar, els.speedMenu, visibility, sig)
+  bindBarEvents(els.bar, els.speedMenu, visibility, sig)
   bindVideoSyncEvents(video, sync, tickLoop, preferences, sig)
   bindPlayButton(video, els.playBtn, sig)
-  bindSeekEvents(video, els.seekTrack, els.seekFill, els.seekThumb, els.timeLabel, sync, sig)
-  bindSpeedEvents(video, els.speedBtn, els.speedMenu, els.speedOptions, preferences, sig)
+  bindSeekEvents(
+    video,
+    els.seekTrack,
+    els.seekFill,
+    els.seekThumb,
+    els.timeLabel,
+    sync,
+    visibility,
+    sig,
+  )
+  bindSpeedEvents(
+    video,
+    els.speedBtn,
+    els.speedMenu,
+    els.speedOptions,
+    preferences,
+    visibility,
+    sig,
+  )
   bindMuteEvents(video, els.muteBtn, sync, preferences, sig)
-  bindVolumeEvents(video, els.volTrack, els.volFill, els.volThumb, preferences, sig)
+  bindVolumeEvents(video, els.volTrack, els.volFill, els.volThumb, preferences, visibility, sig)
 }

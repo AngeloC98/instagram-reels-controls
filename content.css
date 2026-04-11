@@ -24,7 +24,7 @@
 }
 
 /* Resting: seek bar visible at top, full width, 3px */
-/* Hover: slides to inset position, buttons appear, seek grows to 5px */
+/* Active: slides to inset position, buttons appear, seek grows to 5px */
 .irc-controls {
   user-select: none;
   position: absolute;
@@ -41,8 +41,7 @@
     right var(--irc-normal) ease;
 }
 
-*:hover > .irc-controls,
-.irc-controls:hover {
+.irc-controls.irc-controls-visible {
   top: 12px;
   left: 10px;
   right: 10px;
@@ -64,8 +63,7 @@
     padding var(--irc-normal) ease;
 }
 
-*:hover > .irc-controls .irc-lower,
-.irc-controls:hover .irc-lower {
+.irc-controls.irc-controls-visible .irc-lower {
   margin-top: 8px;
   padding: 0 2px;
 }
@@ -123,13 +121,12 @@
   }
 }
 
-*:hover > .irc-controls .irc-seek,
-.irc-controls:hover .irc-seek {
+.irc-controls.irc-controls-visible .irc-seek {
   height: 5px;
   pointer-events: all;
 }
 
-.irc-controls:hover .irc-seek-thumb {
+.irc-controls.irc-controls-visible .irc-seek-thumb {
   opacity: 1;
   pointer-events: all;
 }
@@ -156,8 +153,7 @@
     transform var(--irc-normal) ease;
 }
 
-*:hover > .irc-controls .irc-upper,
-.irc-controls:hover .irc-upper {
+.irc-controls.irc-controls-visible .irc-upper {
   opacity: 1;
   max-height: 50px;
   padding: 5px 10px;

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createControlsDOM } from '../dom'
 import { wireEvents } from '../events'
 import type { PreferenceSnapshot, PreferenceStore, SyncHandlers, TickLoop } from '../types'
@@ -216,6 +216,10 @@ describe('wireEvents', () => {
     document.body.innerHTML = ''
   })
 
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('applies and persists a selected playback speed', () => {
     const { video } = createMockVideo()
     const { store, setSpeed, save } = createPreferenceStore()
@@ -241,6 +245,229 @@ describe('wireEvents', () => {
     ).toBe(false)
     expect(els.speedMenu.hidden).toBe(true)
     expect(save).toHaveBeenCalledTimes(1)
+  })
+
+  it('hides expanded controls after the pointer is idle over the video', () => {
+    vi.useFakeTimers()
+    const mount = document.createElement('div')
+    const { video } = createMockVideo()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    mount.append(video, els.bar)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+
+    dispatchPointerEvent(mount, 'pointermove', 50)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    vi.advanceTimersByTime(1799)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    vi.advanceTimersByTime(1)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
+  })
+
+  it('hides expanded controls quickly after the pointer leaves the video area', () => {
+    vi.useFakeTimers()
+    const mount = document.createElement('div')
+    const { video } = createMockVideo()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    mount.append(video, els.bar)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+
+    dispatchPointerEvent(mount, 'pointermove', 50)
+    dispatchPointerEvent(mount, 'pointerleave', 50)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    vi.advanceTimersByTime(199)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    vi.advanceTimersByTime(1)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
+  })
+
+  it('keeps expanded controls visible while the speed menu is open', () => {
+    vi.useFakeTimers()
+    const mount = document.createElement('div')
+    const { video } = createMockVideo()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    mount.append(video, els.bar)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+
+    dispatchPointerEvent(mount, 'pointermove', 50)
+    els.speedBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    vi.advanceTimersByTime(1800)
+
+    expect(els.speedMenu.hidden).toBe(false)
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    els.speedBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    vi.advanceTimersByTime(1800)
+
+    expect(els.speedMenu.hidden).toBe(true)
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
+  })
+
+  it('uses the quick hide delay after a pin releases outside the video area', () => {
+    vi.useFakeTimers()
+    const mount = document.createElement('div')
+    const { video } = createMockVideo()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    mount.append(video, els.bar)
+    document.body.appendChild(mount)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+
+    dispatchPointerEvent(mount, 'pointermove', 50)
+    els.speedBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    dispatchPointerEvent(mount, 'pointerleave', 50)
+
+    vi.advanceTimersByTime(1800)
+
+    expect(els.speedMenu.hidden).toBe(false)
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    dispatchPointerEvent(document.body, 'pointerdown', 50)
+    vi.advanceTimersByTime(199)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    vi.advanceTimersByTime(1)
+
+    expect(els.speedMenu.hidden).toBe(true)
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
+  })
+
+  it('closes the speed menu and releases its pin when clicking outside controls', () => {
+    vi.useFakeTimers()
+    const mount = document.createElement('div')
+    const { video } = createMockVideo()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    mount.append(video, els.bar)
+    document.body.appendChild(mount)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+
+    dispatchPointerEvent(mount, 'pointermove', 50)
+    els.speedBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+    expect(els.speedMenu.hidden).toBe(false)
+
+    dispatchPointerEvent(document.body, 'pointerdown', 50)
+
+    expect(els.speedMenu.hidden).toBe(true)
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    vi.advanceTimersByTime(1800)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
+  })
+
+  it('does not treat mouse focus on a control button as a permanent pin', () => {
+    vi.useFakeTimers()
+    const mount = document.createElement('div')
+    const { video } = createMockVideo()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    mount.append(video, els.bar)
+    document.body.appendChild(mount)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+
+    dispatchPointerEvent(mount, 'pointermove', 50)
+    dispatchPointerEvent(els.playBtn, 'pointerdown', 50)
+    els.playBtn.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+
+    vi.advanceTimersByTime(1800)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
+  })
+
+  it('keeps expanded controls visible while keyboard focus is inside controls', () => {
+    vi.useFakeTimers()
+    const mount = document.createElement('div')
+    const { video } = createMockVideo()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    mount.append(video, els.bar)
+    document.body.appendChild(mount)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+    els.playBtn.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    vi.advanceTimersByTime(1800)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    els.playBtn.dispatchEvent(
+      new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }),
+    )
+    vi.advanceTimersByTime(1800)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
+  })
+
+  it('keeps expanded controls visible while scrubbing', () => {
+    vi.useFakeTimers()
+    const mount = document.createElement('div')
+    const { video } = createMockVideo({ duration: 200 })
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+    mockTrackGeometry(els.seekTrack)
+
+    mount.append(video, els.bar)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+
+    dispatchPointerEvent(mount, 'pointermove', 50)
+    dispatchPointerEvent(els.seekTrack, 'pointerdown', 50)
+    vi.advanceTimersByTime(1800)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+
+    dispatchPointerEvent(els.seekTrack, 'pointerup', 50)
+    vi.advanceTimersByTime(1800)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
   })
 
   it('restores a minimal volume when unmuting from zero', () => {
