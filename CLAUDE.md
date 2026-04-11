@@ -30,6 +30,7 @@ The extension is a single content script (`src/index.ts` → bundled as IIFE `co
 **Entry flow:** `index.ts` waits for `prefsReady` (async storage load), then starts a `MutationObserver` on `document.body`. On each mutation batch (debounced via `requestAnimationFrame`), it finds `<video>` elements wider than 200px and calls `buildControls`.
 
 **Module responsibilities:**
+
 - `controls.ts` — orchestrator. `buildControls` creates DOM, wires events, applies preferences, starts tick loop. Uses a `WeakMap` to track injected videos and their cleanup functions. `cleanupRemovedVideos` tears down controls when videos are removed from DOM.
 - `dom.ts` — pure DOM construction via the `el()` helper. Returns a `ControlElements` bag. No side effects.
 - `sync.ts` — video↔UI state sync. `createSyncHandlers` returns functions to update play button icon, seek bar position/gradient, and volume icon/bar. `createTickLoop` drives seek updates via `requestAnimationFrame` while playing.
