@@ -55,6 +55,7 @@ src/
   dom.ts           - DOM builder + controls creation
   sync.ts          - video-to-UI state sync + tick loop
   events.ts        - event listener wiring
+  controlsVisibility.ts - show/hide state machine for controls bar
   controls.ts      - controls orchestrator
   index.ts         - entry point (adapter startup)
 manifests/
