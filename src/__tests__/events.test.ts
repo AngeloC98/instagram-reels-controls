@@ -195,6 +195,7 @@ function dispatchPointerEvent(
   type: string,
   clientX: number,
   pointerId = 1,
+  init: { clientY?: number; movementX?: number; movementY?: number } = {},
 ): void {
   const event = new Event(type, { bubbles: true, cancelable: true })
 
@@ -203,10 +204,32 @@ function dispatchPointerEvent(
     value: clientX,
   })
 
+  Object.defineProperty(event, 'clientY', {
+    configurable: true,
+    value: init.clientY ?? 0,
+  })
+
   Object.defineProperty(event, 'pointerId', {
     configurable: true,
     value: pointerId,
   })
+
+  const movementX = init.movementX ?? (type === 'pointermove' ? 1 : undefined)
+  const movementY = init.movementY ?? (type === 'pointermove' ? 0 : undefined)
+
+  if (movementX !== undefined) {
+    Object.defineProperty(event, 'movementX', {
+      configurable: true,
+      value: movementX,
+    })
+  }
+
+  if (movementY !== undefined) {
+    Object.defineProperty(event, 'movementY', {
+      configurable: true,
+      value: movementY,
+    })
+  }
 
   target.dispatchEvent(event)
 }
@@ -271,6 +294,34 @@ describe('wireEvents', () => {
     vi.advanceTimersByTime(1)
 
     expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
+  })
+
+  it('keeps controls hidden when scroll moves a reel under a stationary pointer', () => {
+    vi.useFakeTimers()
+    const mount = document.createElement('div')
+    const { video } = createMockVideo()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    mount.append(video, els.bar)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+
+    dispatchPointerEvent(mount, 'pointermove', 50, 1, { movementX: 4, movementY: 0 })
+    vi.advanceTimersByTime(1800)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
+
+    dispatchPointerEvent(mount, 'pointerenter', 50, 1, { movementX: 0, movementY: 0 })
+    dispatchPointerEvent(mount, 'pointermove', 50, 1, { movementX: 0, movementY: 0 })
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(false)
+
+    dispatchPointerEvent(mount, 'pointermove', 52, 1, { movementX: 2, movementY: 0 })
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
   })
 
   it('hides expanded controls quickly after the pointer leaves the video area', () => {
