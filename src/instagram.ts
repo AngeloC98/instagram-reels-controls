@@ -7,7 +7,7 @@ function hideSpeedMenus(): void {
 }
 
 function isInPrimaryInstagramSurface(video: HTMLVideoElement): boolean {
-  return Boolean(video.closest('main') || video.closest('[role="dialog"]'))
+  return Boolean(video.closest('main') ?? video.closest('[role="dialog"]'))
 }
 
 function isPlayableMediaSurface(video: HTMLVideoElement): boolean {
