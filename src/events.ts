@@ -4,6 +4,7 @@ import {
   createControlsVisibilityMachine,
   type ControlsVisibilityMachine,
 } from './controlsVisibility'
+import { hasPointerMoved, recordPointerPosition } from './pointerActivity'
 
 function setSpeedMenuOpen(
   speedMenu: HTMLDivElement,
@@ -26,13 +27,16 @@ function bindVisibilityEvents(
 
   let keyboardMayFocusControls = false
 
-  const showFromMount = (e: PointerEvent): void => {
+  const showFromMountMotion = (e: PointerEvent): void => {
     if (e.target instanceof Node && bar.contains(e.target)) return
+    if (!hasPointerMoved(e)) return
     visibility.activity()
   }
 
   const handleMountPointerDown = (e: PointerEvent): void => {
-    showFromMount(e)
+    if (e.target instanceof Node && bar.contains(e.target)) return
+    recordPointerPosition(e)
+    visibility.activity()
   }
 
   document.addEventListener(
@@ -52,8 +56,8 @@ function bindVisibilityEvents(
     },
     { capture: true, signal: sig },
   )
-  mount.addEventListener('pointerenter', showFromMount, { signal: sig })
-  mount.addEventListener('pointermove', showFromMount, { signal: sig })
+  mount.addEventListener('pointerenter', showFromMountMotion, { signal: sig })
+  mount.addEventListener('pointermove', showFromMountMotion, { signal: sig })
   mount.addEventListener('pointerdown', handleMountPointerDown, { signal: sig })
   mount.addEventListener(
     'pointerleave',
