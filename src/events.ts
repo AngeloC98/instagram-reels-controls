@@ -254,7 +254,7 @@ function bindSpeedEvents(
     'click',
     (e) => {
       e.stopPropagation()
-      setSpeedMenuOpen(speedMenu, visibility, speedMenu.hidden)
+      setSpeedMenuOpen(speedMenu, visibility, speedMenu.hidden !== false)
     },
     { signal: sig },
   )
