@@ -31,6 +31,7 @@ export function buildControls(
 
   mount.style.position = 'relative'
   mount.style.overflow = 'hidden'
+  mount.classList.add('irc-mount')
 
   const ac = new AbortController()
   const els = createControlsDOM()
@@ -49,6 +50,7 @@ export function buildControls(
     tickLoop.stop()
     ac.abort()
     els.bar.remove()
+    mount.classList.remove('irc-mount')
   })
 }
 
