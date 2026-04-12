@@ -5,6 +5,7 @@ export interface ControlElements {
   seekFill: HTMLDivElement
   seekThumb: HTMLDivElement
   timeLabel: HTMLSpanElement
+  pipBtn?: HTMLButtonElement
   speedBtn: HTMLButtonElement
   speedMenu: HTMLDivElement
   speedOptions: HTMLDivElement[]

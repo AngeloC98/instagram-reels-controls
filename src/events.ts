@@ -6,14 +6,40 @@ import {
 } from './controlsVisibility'
 import { hasPointerMoved, recordPointerPosition } from './pointerActivity'
 
+function isNodeInDocument(value: EventTarget | null, ownerDocument: Document): value is Node {
+  const NodeConstructor = ownerDocument.defaultView?.Node ?? Node
+  return value instanceof NodeConstructor
+}
+
+function isElementInDocument(value: EventTarget | null, ownerDocument: Document): value is Element {
+  const ElementConstructor = ownerDocument.defaultView?.Element ?? Element
+  return value instanceof ElementConstructor
+}
+
 function setSpeedMenuOpen(
   speedMenu: HTMLDivElement,
   visibility: ControlsVisibilityMachine,
   open: boolean,
+  beforeOpen?: () => void,
 ): void {
+  if (open) beforeOpen?.()
   speedMenu.hidden = !open
   if (open) visibility.pin('menu')
   else visibility.unpin('menu')
+}
+
+function positionSpeedMenu(
+  bar: HTMLDivElement,
+  speedBtn: HTMLButtonElement,
+  speedMenu: HTMLDivElement,
+): void {
+  const barRect = bar.getBoundingClientRect()
+  const buttonRect = speedBtn.getBoundingClientRect()
+  const top = Math.max(0, buttonRect.bottom - barRect.top + 8)
+  const right = Math.max(0, barRect.right - buttonRect.right)
+
+  speedMenu.style.setProperty('--irc-speed-menu-top', `${String(Math.round(top))}px`)
+  speedMenu.style.setProperty('--irc-speed-menu-right', `${String(Math.round(right))}px`)
 }
 
 function bindVisibilityEvents(
@@ -22,35 +48,36 @@ function bindVisibilityEvents(
   visibility: ControlsVisibilityMachine,
   sig: AbortSignal,
 ): void {
+  const ownerDocument = bar.ownerDocument
   const mount = bar.parentElement
-  if (!(mount instanceof HTMLElement)) return
+  if (!isElementInDocument(mount, ownerDocument)) return
 
   let keyboardMayFocusControls = false
 
   const showFromMountMotion = (e: PointerEvent): void => {
-    if (e.target instanceof Node && bar.contains(e.target)) return
+    if (isNodeInDocument(e.target, ownerDocument) && bar.contains(e.target)) return
     if (!hasPointerMoved(e)) return
     visibility.activity()
   }
 
   const handleMountPointerDown = (e: PointerEvent): void => {
-    if (e.target instanceof Node && bar.contains(e.target)) return
+    if (isNodeInDocument(e.target, ownerDocument) && bar.contains(e.target)) return
     recordPointerPosition(e)
     visibility.activity()
   }
 
-  document.addEventListener(
+  ownerDocument.addEventListener(
     'keydown',
     () => {
       keyboardMayFocusControls = true
     },
     { capture: true, signal: sig },
   )
-  document.addEventListener(
+  ownerDocument.addEventListener(
     'pointerdown',
     (e) => {
       keyboardMayFocusControls = false
-      if (!(e.target instanceof Node && bar.contains(e.target))) {
+      if (!(isNodeInDocument(e.target, ownerDocument) && bar.contains(e.target))) {
         setSpeedMenuOpen(speedMenu, visibility, false)
       }
     },
@@ -93,7 +120,7 @@ function bindVisibilityEvents(
   bar.addEventListener(
     'focusout',
     (e) => {
-      if (e.relatedTarget instanceof Node && bar.contains(e.relatedTarget)) return
+      if (isNodeInDocument(e.relatedTarget, ownerDocument) && bar.contains(e.relatedTarget)) return
       visibility.unpin('keyboard-focus')
     },
     { signal: sig },
@@ -115,7 +142,8 @@ function bindBarEvents(
     'click',
     (e) => {
       e.stopPropagation()
-      if (!(e.target as HTMLElement).closest('.irc-speed-wrap')) closeSpeedMenu()
+      if (!isElementInDocument(e.target, bar.ownerDocument)) return
+      if (!e.target.closest('.irc-speed-wrap, .irc-speed-menu')) closeSpeedMenu()
     },
     { signal: sig },
   )
@@ -246,6 +274,7 @@ function bindSeekEvents(
 }
 
 function bindSpeedEvents(
+  bar: HTMLDivElement,
   video: HTMLVideoElement,
   speedBtn: HTMLButtonElement,
   speedMenu: HTMLDivElement,
@@ -254,12 +283,18 @@ function bindSpeedEvents(
   visibility: ControlsVisibilityMachine,
   sig: AbortSignal,
 ): void {
+  const updateMenuPosition = (): void => {
+    positionSpeedMenu(bar, speedBtn, speedMenu)
+  }
+
+  bar.ownerDocument.defaultView?.addEventListener('resize', updateMenuPosition, { signal: sig })
+
   speedBtn.addEventListener(
     'click',
     (e) => {
       e.stopPropagation()
       const shouldOpenMenu = speedMenu.hidden !== false
-      setSpeedMenuOpen(speedMenu, visibility, shouldOpenMenu)
+      setSpeedMenuOpen(speedMenu, visibility, shouldOpenMenu, updateMenuPosition)
     },
     { signal: sig },
   )
@@ -405,6 +440,7 @@ export function wireEvents(
     sig,
   )
   bindSpeedEvents(
+    els.bar,
     video,
     els.speedBtn,
     els.speedMenu,

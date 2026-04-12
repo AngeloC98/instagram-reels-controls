@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   findInstagramVideos,
+  findAdjacentInstagramReel,
   isInstagramVideoCandidate,
   resolveInstagramMount,
+  scrollToAdjacentInstagramReel,
   startInstagramIntegration,
 } from '../instagram'
 
@@ -96,6 +98,61 @@ describe('instagram adapter', () => {
     expect(resolveInstagramMount(video)).toBe(mount)
     expect(mount.style.position).toBe('')
     expect(mount.style.overflow).toBe('')
+  })
+
+  it('finds adjacent reels by vertical order', () => {
+    const firstMount = document.createElement('div')
+    const secondMount = document.createElement('div')
+    const firstVideo = document.createElement('video')
+    const secondVideo = document.createElement('video')
+
+    setVideoWidth(firstVideo, 360)
+    setVideoWidth(secondVideo, 360)
+    firstMount.appendChild(firstVideo)
+    secondMount.appendChild(secondVideo)
+    appendToMain(firstMount, secondMount)
+
+    Object.defineProperty(firstVideo, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ top: 200 }),
+    })
+    Object.defineProperty(secondVideo, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ top: 600 }),
+    })
+
+    expect(findAdjacentInstagramReel(firstVideo, 'next')).toBe(secondVideo)
+    expect(findAdjacentInstagramReel(secondVideo, 'previous')).toBe(firstVideo)
+    expect(findAdjacentInstagramReel(firstVideo, 'previous')).toBeNull()
+  })
+
+  it('scrolls the adjacent reel mount into view', () => {
+    const firstMount = document.createElement('div')
+    const secondMount = document.createElement('div')
+    const firstVideo = document.createElement('video')
+    const secondVideo = document.createElement('video')
+    const scrollIntoView = vi.fn()
+
+    setVideoWidth(firstVideo, 360)
+    setVideoWidth(secondVideo, 360)
+    firstMount.appendChild(firstVideo)
+    secondMount.appendChild(secondVideo)
+    appendToMain(firstMount, secondMount)
+    Object.defineProperty(secondMount, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    })
+    Object.defineProperty(firstVideo, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ top: 100 }),
+    })
+    Object.defineProperty(secondVideo, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ top: 500 }),
+    })
+
+    expect(scrollToAdjacentInstagramReel(firstVideo, 'next')).toBe(secondVideo)
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' })
   })
 
   it('scans added subtrees instead of the whole document after startup', async () => {
