@@ -1,5 +1,6 @@
 import type { ControlElements } from './types'
-import { ICON, setIcon } from './icons'
+import { setIcon } from './icons'
+import { ENABLE_DOCUMENT_PIP } from './buildFlags'
 
 const CONTROLS_CLASS = 'irc-controls'
 const SPEED_OPTIONS = ['0.25', '0.5', '0.75', '1', '1.25', '1.5', '2'] as const
@@ -9,6 +10,7 @@ type ElAttrs = Record<string, string | boolean>
 interface CreateControlsDOMOptions {
   ownerDocument?: Document
   includePictureInPictureButton?: boolean
+  pictureInPictureIcon?: string
 }
 
 export function el<K extends keyof HTMLElementTagNameMap>(
@@ -34,7 +36,8 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 
 export function createControlsDOM(options: CreateControlsDOMOptions = {}): ControlElements {
   const ownerDocument = options.ownerDocument ?? document
-  const includePictureInPictureButton = options.includePictureInPictureButton ?? true
+  const includePictureInPictureButton =
+    ENABLE_DOCUMENT_PIP && (options.includePictureInPictureButton ?? true)
   const create = <K extends keyof HTMLElementTagNameMap>(
     tag: K,
     attrs?: ElAttrs,
@@ -87,7 +90,7 @@ export function createControlsDOM(options: CreateControlsDOMOptions = {}): Contr
       })
     : undefined
 
-  if (pipBtn) setIcon(pipBtn, ICON.pictureInPicture)
+  if (pipBtn && options.pictureInPictureIcon) setIcon(pipBtn, options.pictureInPictureIcon)
 
   const upperChildren = [
     playBtn,

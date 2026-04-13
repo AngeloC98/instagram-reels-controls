@@ -1,5 +1,4 @@
 import pauseIcon from '../icons/pause.svg?raw'
-import pictureInPictureIcon from '../icons/picture-in-picture.svg?raw'
 import playIcon from '../icons/play.svg?raw'
 import volumeHighIcon from '../icons/vol-high.svg?raw'
 import volumeLowIcon from '../icons/vol-low.svg?raw'
@@ -10,7 +9,6 @@ const SVG_NS = 'http://www.w3.org/2000/svg'
 export const ICON = {
   play: playIcon,
   pause: pauseIcon,
-  pictureInPicture: pictureInPictureIcon,
   volHigh: volumeHighIcon,
   volLow: volumeLowIcon,
   volMute: volumeMuteIcon,

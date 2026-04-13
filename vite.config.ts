@@ -20,6 +20,16 @@ function readManifest(path: string): ManifestData {
   return JSON.parse(readFileSync(path, 'utf-8')) as ManifestData
 }
 
+function readContentCss(target: string): string {
+  const css = readFileSync(resolve(import.meta.dirname, 'content.css'), 'utf-8')
+  if (target === 'chrome') return css
+
+  return css.replace(
+    /\/\* chrome-only: document-pip start \*\/[\s\S]*?\/\* chrome-only: document-pip end \*\//g,
+    '',
+  )
+}
+
 function extensionPlugin(target: string) {
   return {
     name: 'extension-build',
@@ -32,7 +42,7 @@ function extensionPlugin(target: string) {
       const manifest = { ...base, ...override }
       writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2))
 
-      cpSync(resolve(import.meta.dirname, 'content.css'), resolve(outDir, 'content.css'))
+      writeFileSync(resolve(outDir, 'content.css'), readContentCss(target))
       cpSync(resolve(import.meta.dirname, 'icons'), resolve(outDir, 'icons'), { recursive: true })
     },
   }
@@ -41,6 +51,9 @@ function extensionPlugin(target: string) {
 const target = getTarget()
 
 export default defineConfig({
+  define: {
+    __IRC_ENABLE_DOCUMENT_PIP__: JSON.stringify(target === 'chrome'),
+  },
   build: {
     outDir: `dist/${target}`,
     emptyOutDir: true,

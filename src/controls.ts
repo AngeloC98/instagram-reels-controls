@@ -5,6 +5,8 @@ import { createSyncHandlers, createTickLoop } from './sync'
 import { wireEvents } from './events'
 import { preferenceStore } from './preferences'
 import { bindDocumentPictureInPictureButton } from './pip'
+import { PICTURE_IN_PICTURE_ICON } from './pip/icon'
+import { ENABLE_DOCUMENT_PIP } from './buildFlags'
 
 const injected = new WeakMap<HTMLVideoElement, () => void>()
 
@@ -20,13 +22,22 @@ export function buildControls(
   mount.classList.add('irc-mount')
 
   const ac = new AbortController()
-  const els = createControlsDOM()
+  const els = createControlsDOM(
+    ENABLE_DOCUMENT_PIP
+      ? {
+          includePictureInPictureButton: true,
+          pictureInPictureIcon: PICTURE_IN_PICTURE_ICON,
+        }
+      : { includePictureInPictureButton: false },
+  )
   const sync = createSyncHandlers(video, els)
   const tickLoop = createTickLoop(sync.updateSeek)
 
   mount.appendChild(els.bar)
   wireEvents(video, els, sync, tickLoop, preferences, ac.signal)
-  if (els.pipBtn) bindDocumentPictureInPictureButton(video, els.pipBtn, preferences, ac.signal)
+  if (ENABLE_DOCUMENT_PIP && els.pipBtn) {
+    bindDocumentPictureInPictureButton(video, els.pipBtn, preferences, ac.signal)
+  }
   applyControlPreferences(video, els, preferences)
   sync.updatePlayButton()
   sync.updateSeek()

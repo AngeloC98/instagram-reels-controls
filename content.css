@@ -260,6 +260,7 @@
   }
 }
 
+/* chrome-only: document-pip start */
 .irc-pip-body {
   margin: 0;
   width: 100vw;
@@ -277,13 +278,24 @@
   background: #050505;
 }
 
+.irc-pip-video-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #050505;
+}
+
 .irc-pip-video {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
   background: #050505;
+  will-change: transform;
 }
+/* chrome-only: document-pip end */
 
 .irc-volume {
   position: relative;

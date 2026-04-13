@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { el, createControlsDOM } from '../dom'
+import { PICTURE_IN_PICTURE_ICON } from '../pip/icon'
 
 vi.mock('../browser', () => ({
   ext: {
@@ -109,7 +110,7 @@ describe('createControlsDOM', () => {
   })
 
   it('starts the page PiP button hidden', () => {
-    const dom = createControlsDOM()
+    const dom = createControlsDOM({ pictureInPictureIcon: PICTURE_IN_PICTURE_ICON })
     expect(dom.pipBtn?.hidden).toBe(true)
     expect(
       dom.pipBtn?.querySelector('svg')?.classList.contains('lucide-picture-in-picture-2'),

@@ -415,6 +415,10 @@ function bindVolumeEvents(
   )
 }
 
+interface WireEventsOptions {
+  initiallyVisible?: boolean
+}
+
 export function wireEvents(
   video: HTMLVideoElement,
   els: ControlElements,
@@ -422,8 +426,13 @@ export function wireEvents(
   tickLoop: TickLoop,
   preferences: PreferenceStore,
   sig: AbortSignal,
+  options: WireEventsOptions = {},
 ): void {
-  const visibility = createControlsVisibilityMachine(els.bar, sig)
+  const visibility = createControlsVisibilityMachine(
+    els.bar,
+    sig,
+    options.initiallyVisible ? { initiallyVisible: true } : {},
+  )
 
   bindVisibilityEvents(els.bar, els.speedMenu, visibility, sig)
   bindBarEvents(els.bar, els.speedMenu, visibility, sig)
