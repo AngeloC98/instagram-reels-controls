@@ -30,6 +30,7 @@ function mockEls(): ControlElements {
     seekFill: document.createElement('div'),
     seekThumb: document.createElement('div'),
     timeLabel: document.createElement('span'),
+    autoplayBtn: makeBtn(),
     speedBtn: makeBtn(),
     speedMenu: document.createElement('div'),
     speedOptions: [],

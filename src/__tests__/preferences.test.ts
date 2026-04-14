@@ -20,13 +20,19 @@ beforeEach(() => {
 
 describe('preferences', () => {
   it('loads preferences from storage', async () => {
-    mockStorage.get.mockResolvedValue({ muted: false, volume: 0.5, speed: 1.5 })
+    mockStorage.get.mockResolvedValue({
+      muted: false,
+      volume: 0.5,
+      speed: 1.5,
+      autoplayNext: true,
+    })
     const prefs = await import('../preferences')
     await prefs.preferenceStore.ready
     expect(prefs.preferenceStore.getSnapshot()).toMatchObject({
       muted: false,
       volume: 0.5,
       speed: 1.5,
+      autoplayNext: true,
     })
   })
 
@@ -38,6 +44,7 @@ describe('preferences', () => {
       muted: true,
       volume: 1,
       speed: 1,
+      autoplayNext: false,
     })
   })
 

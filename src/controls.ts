@@ -1,5 +1,6 @@
 import type { PreferenceStore } from './types'
 import { applyControlPreferences } from './controlPreferences'
+import { bindAutoplayButton, bindAutoplayNextReel } from './autoplay'
 import { createControlsDOM } from './dom'
 import { createSyncHandlers, createTickLoop } from './sync'
 import { wireEvents } from './events'
@@ -35,6 +36,8 @@ export function buildControls(
 
   mount.appendChild(els.bar)
   wireEvents(video, els, sync, tickLoop, preferences, ac.signal)
+  bindAutoplayButton(els.autoplayBtn, preferences, ac.signal)
+  bindAutoplayNextReel(video, preferences, ac.signal)
   if (ENABLE_DOCUMENT_PIP && els.pipBtn) {
     bindDocumentPictureInPictureButton(video, els.pipBtn, preferences, ac.signal)
   }

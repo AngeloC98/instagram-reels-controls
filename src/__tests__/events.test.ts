@@ -95,6 +95,7 @@ function createPreferenceStore(initial: Partial<PreferenceSnapshot> = {}) {
     muted: false,
     volume: 1,
     speed: 1,
+    autoplayNext: false,
     userInteracted: false,
     ...initial,
   }
@@ -109,6 +110,9 @@ function createPreferenceStore(initial: Partial<PreferenceSnapshot> = {}) {
   const setSpeed = vi.fn((value: number) => {
     state.speed = value
   })
+  const setAutoplayNext = vi.fn((value: boolean) => {
+    state.autoplayNext = value
+  })
   const markUserInteracted = vi.fn(() => {
     state.userInteracted = true
   })
@@ -120,11 +124,22 @@ function createPreferenceStore(initial: Partial<PreferenceSnapshot> = {}) {
     setMuted,
     setVolume,
     setSpeed,
+    setAutoplayNext,
     markUserInteracted,
     save,
   }
 
-  return { store, state, getSnapshot, setMuted, setVolume, setSpeed, markUserInteracted, save }
+  return {
+    store,
+    state,
+    getSnapshot,
+    setMuted,
+    setVolume,
+    setSpeed,
+    setAutoplayNext,
+    markUserInteracted,
+    save,
+  }
 }
 
 function createSyncMock() {

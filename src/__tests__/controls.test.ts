@@ -16,11 +16,13 @@ function createPreferenceStore(): PreferenceStore {
       muted: false,
       volume: 1,
       speed: 1,
+      autoplayNext: false,
       userInteracted: false,
     }),
     setMuted: vi.fn(),
     setVolume: vi.fn(),
     setSpeed: vi.fn(),
+    setAutoplayNext: vi.fn(),
     markUserInteracted: vi.fn(),
     save: vi.fn(),
   }
