@@ -1,26 +1,14 @@
-import type { ControlElements, PreferenceStore } from './types'
+import type { PreferenceStore } from './types'
+import { applyControlPreferences } from './controlPreferences'
 import { createControlsDOM } from './dom'
 import { createSyncHandlers, createTickLoop } from './sync'
 import { wireEvents } from './events'
 import { preferenceStore } from './preferences'
+import { bindDocumentPictureInPictureButton } from './pip'
+import { PICTURE_IN_PICTURE_ICON } from './pip/icon'
+import { ENABLE_DOCUMENT_PIP } from './buildFlags'
 
 const injected = new WeakMap<HTMLVideoElement, () => void>()
-
-function applyPreferences(
-  video: HTMLVideoElement,
-  els: ControlElements,
-  preferences: PreferenceStore,
-): void {
-  const snapshot = preferences.getSnapshot()
-
-  // Mute state applied on play event to avoid breaking autoplay policy
-  video.volume = snapshot.volume
-  video.playbackRate = snapshot.speed
-  els.speedBtn.textContent = `${String(snapshot.speed)}\u00D7`
-  els.speedOptions.forEach((o) => {
-    o.classList.toggle('irc-speed-active', parseFloat(o.dataset.speed ?? '1') === snapshot.speed)
-  })
-}
 
 export function buildControls(
   video: HTMLVideoElement,
@@ -34,13 +22,23 @@ export function buildControls(
   mount.classList.add('irc-mount')
 
   const ac = new AbortController()
-  const els = createControlsDOM()
+  const els = createControlsDOM(
+    ENABLE_DOCUMENT_PIP
+      ? {
+          includePictureInPictureButton: true,
+          pictureInPictureIcon: PICTURE_IN_PICTURE_ICON,
+        }
+      : { includePictureInPictureButton: false },
+  )
   const sync = createSyncHandlers(video, els)
   const tickLoop = createTickLoop(sync.updateSeek)
 
   mount.appendChild(els.bar)
   wireEvents(video, els, sync, tickLoop, preferences, ac.signal)
-  applyPreferences(video, els, preferences)
+  if (ENABLE_DOCUMENT_PIP && els.pipBtn) {
+    bindDocumentPictureInPictureButton(video, els.pipBtn, preferences, ac.signal)
+  }
+  applyControlPreferences(video, els, preferences)
   sync.updatePlayButton()
   sync.updateSeek()
   sync.updateMute()

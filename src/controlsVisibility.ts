@@ -26,9 +26,14 @@ export interface ControlsVisibilityMachine {
   unpin: (pin: ControlsVisibilityPin) => void
 }
 
+interface ControlsVisibilityOptions {
+  initiallyVisible?: boolean
+}
+
 export function createControlsVisibilityMachine(
   bar: HTMLDivElement,
   sig: AbortSignal,
+  options: ControlsVisibilityOptions = {},
 ): ControlsVisibilityMachine {
   let state: ControlsVisibilityState = 'hidden'
   let hideTimer: number | undefined
@@ -107,6 +112,8 @@ export function createControlsVisibilityMachine(
     },
     { once: true },
   )
+
+  if (options.initiallyVisible) dispatch({ type: 'activity' })
 
   return {
     activity: () => {

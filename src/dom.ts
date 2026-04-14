@@ -1,16 +1,25 @@
 import type { ControlElements } from './types'
+import { setIcon } from './icons'
+import { ENABLE_DOCUMENT_PIP } from './buildFlags'
 
 const CONTROLS_CLASS = 'irc-controls'
 const SPEED_OPTIONS = ['0.25', '0.5', '0.75', '1', '1.25', '1.5', '2'] as const
 
 type ElAttrs = Record<string, string | boolean>
 
+interface CreateControlsDOMOptions {
+  ownerDocument?: Document
+  includePictureInPictureButton?: boolean
+  pictureInPictureIcon?: string
+}
+
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   attrs?: ElAttrs,
   children?: HTMLElement[],
+  ownerDocument: Document = document,
 ): HTMLElementTagNameMap[K] {
-  const e = document.createElement(tag)
+  const e = ownerDocument.createElement(tag)
   if (attrs) {
     for (const [k, v] of Object.entries(attrs)) {
       if (k === 'className' && typeof v === 'string') e.className = v
@@ -25,47 +34,85 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   return e
 }
 
-export function createControlsDOM(): ControlElements {
-  const playBtn = el('button', { className: 'irc-btn irc-playpause', title: 'Play/Pause' })
-  const muteBtn = el('button', { className: 'irc-btn irc-mute', title: 'Mute/Unmute' })
-  const volFill = el('div', { className: 'irc-vol-fill' })
-  const volThumb = el('div', { className: 'irc-vol-thumb' })
-  const volTrack = el('div', { className: 'irc-volume' }, [volFill, volThumb])
-  const timeLabel = el('span', { className: 'irc-time', textContent: '0:00 / 0:00' })
-  const speedBtn = el('button', {
-    className: 'irc-speed-btn',
+export function createControlsDOM(options: CreateControlsDOMOptions = {}): ControlElements {
+  const ownerDocument = options.ownerDocument ?? document
+  const includePictureInPictureButton =
+    ENABLE_DOCUMENT_PIP && (options.includePictureInPictureButton ?? true)
+  const create = <K extends keyof HTMLElementTagNameMap>(
+    tag: K,
+    attrs?: ElAttrs,
+    children?: HTMLElement[],
+  ): HTMLElementTagNameMap[K] => el(tag, attrs, children, ownerDocument)
+
+  const playBtn = create('button', {
+    className: 'irc-control-button irc-compact-control irc-icon-control irc-btn irc-playpause',
+    title: 'Play/Pause',
+  })
+  const muteBtn = create('button', {
+    className: 'irc-control-button irc-compact-control irc-icon-control irc-btn irc-mute',
+    title: 'Mute/Unmute',
+  })
+  const volFill = create('div', { className: 'irc-vol-fill' })
+  const volThumb = create('div', { className: 'irc-vol-thumb' })
+  const volTrack = create('div', { className: 'irc-volume' }, [volFill, volThumb])
+  const timeLabel = create('span', {
+    className: 'irc-control-label irc-time',
+    textContent: '0:00 / 0:00',
+  })
+  const speedBtn = create('button', {
+    className: 'irc-control-button irc-compact-control irc-speed-btn',
     title: 'Playback speed',
     textContent: '1\u00D7',
   })
 
   const speedOptions = SPEED_OPTIONS.map((v) =>
-    el('div', {
+    create('div', {
       className: `irc-speed-option${v === '1' ? ' irc-speed-active' : ''}`,
       'data-speed': v,
       textContent: `${v}\u00D7`,
     }),
   )
 
-  const speedMenu = el('div', { className: 'irc-speed-menu', hidden: true }, [
-    el('div', { className: 'irc-speed-title', textContent: 'Playback speed' }),
+  const speedMenu = create('div', { className: 'irc-speed-menu', hidden: true }, [
+    create('div', { className: 'irc-speed-title', textContent: 'Playback speed' }),
     ...speedOptions,
   ])
 
-  const seekFill = el('div', { className: 'irc-seek-fill' })
-  const seekThumb = el('div', { className: 'irc-seek-thumb' })
-  const seekTrack = el('div', { className: 'irc-seek' }, [seekFill, seekThumb])
+  const seekFill = create('div', { className: 'irc-seek-fill' })
+  const seekThumb = create('div', { className: 'irc-seek-thumb' })
+  const seekTrack = create('div', { className: 'irc-seek' }, [seekFill, seekThumb])
+  const pipBtn = includePictureInPictureButton
+    ? create('button', {
+        className: 'irc-control-button irc-compact-control irc-icon-control irc-btn irc-pip-btn',
+        title: 'Picture-in-picture',
+        'aria-label': 'Picture-in-picture',
+        hidden: true,
+      })
+    : undefined
 
-  const bar = el('div', { className: CONTROLS_CLASS }, [
-    el('div', { className: 'irc-row irc-upper' }, [
-      playBtn,
-      el('div', { className: 'irc-vol-group' }, [muteBtn, volTrack]),
-      timeLabel,
-      el('div', { className: 'irc-speed-wrap' }, [speedBtn, speedMenu]),
-    ]),
-    el('div', { className: 'irc-row irc-lower' }, [seekTrack]),
-  ])
+  if (pipBtn && options.pictureInPictureIcon) setIcon(pipBtn, options.pictureInPictureIcon)
 
-  return {
+  const upperChildren = [
+    playBtn,
+    create('div', { className: 'irc-vol-group' }, [muteBtn, volTrack]),
+    timeLabel,
+    pipBtn,
+    create('div', { className: 'irc-speed-wrap' }, [speedBtn]),
+  ].filter((child): child is HTMLElement => Boolean(child))
+
+  const bar = create(
+    'div',
+    {
+      className: CONTROLS_CLASS,
+    },
+    [
+      create('div', { className: 'irc-row irc-upper' }, upperChildren),
+      create('div', { className: 'irc-row irc-lower' }, [seekTrack]),
+      speedMenu,
+    ],
+  )
+
+  const controls: ControlElements = {
     bar,
     playBtn,
     seekTrack,
@@ -80,4 +127,8 @@ export function createControlsDOM(): ControlElements {
     volFill,
     volThumb,
   }
+
+  if (pipBtn) controls.pipBtn = pipBtn
+
+  return controls
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createSyncHandlers } from '../sync'
+import { createSyncHandlers, createTickLoop } from '../sync'
 import type { ControlElements } from '../types'
 
 vi.mock('../browser', () => ({
@@ -91,5 +91,24 @@ describe('createSyncHandlers', () => {
     handlers.scrubbing = true
     handlers.updateSeek()
     expect(els.seekFill.style.width).toBe('')
+  })
+})
+
+describe('createTickLoop', () => {
+  it('treats a zero animation frame id as an active loop', () => {
+    const updateSeek = vi.fn()
+    const animationFrameHost: Pick<Window, 'requestAnimationFrame' | 'cancelAnimationFrame'> = {
+      requestAnimationFrame: vi.fn(() => 0),
+      cancelAnimationFrame: vi.fn(),
+    }
+    const tickLoop = createTickLoop(updateSeek, animationFrameHost)
+
+    tickLoop.start()
+    tickLoop.start()
+    tickLoop.stop()
+
+    expect(updateSeek).toHaveBeenCalledTimes(1)
+    expect(animationFrameHost.requestAnimationFrame).toHaveBeenCalledTimes(1)
+    expect(animationFrameHost.cancelAnimationFrame).toHaveBeenCalledWith(0)
   })
 })

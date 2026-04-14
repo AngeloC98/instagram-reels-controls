@@ -63,20 +63,23 @@ export function createSyncHandlers(video: HTMLVideoElement, els: ControlElements
   }
 }
 
-export function createTickLoop(updateSeek: () => void): TickLoop {
+export function createTickLoop(
+  updateSeek: () => void,
+  animationFrameHost: Pick<Window, 'requestAnimationFrame' | 'cancelAnimationFrame'> = window,
+): TickLoop {
   let rafId: number | null = null
   return {
     start() {
-      if (!rafId) {
+      if (rafId === null) {
         const tick = (): void => {
           updateSeek()
-          rafId = requestAnimationFrame(tick)
+          rafId = animationFrameHost.requestAnimationFrame(tick)
         }
         tick()
       }
     },
     stop() {
-      if (rafId) cancelAnimationFrame(rafId)
+      if (rafId !== null) animationFrameHost.cancelAnimationFrame(rafId)
       rafId = null
     },
   }

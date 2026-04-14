@@ -1,4 +1,5 @@
 const MIN_VIDEO_WIDTH = 200
+export type ReelNavigationDirection = 'previous' | 'next'
 
 function hideSpeedMenus(): void {
   document.querySelectorAll<HTMLDivElement>('.irc-speed-menu').forEach((menu) => {
@@ -49,6 +50,36 @@ function findAddedInstagramVideos(mutations: MutationRecord[]): HTMLVideoElement
 
 export function resolveInstagramMount(video: HTMLVideoElement): HTMLElement | null {
   return video.parentElement
+}
+
+function resolveNavigationScope(video: HTMLVideoElement): ParentNode {
+  return video.closest('[role="dialog"]') ?? video.closest('main') ?? document
+}
+
+export function findAdjacentInstagramReel(
+  video: HTMLVideoElement,
+  direction: ReelNavigationDirection,
+): HTMLVideoElement | null {
+  const videos = findInstagramVideos(resolveNavigationScope(video)).sort(
+    (a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top,
+  )
+  const currentIndex = videos.indexOf(video)
+  if (currentIndex === -1) return null
+
+  const offset = direction === 'next' ? 1 : -1
+  return videos[currentIndex + offset] ?? null
+}
+
+export function scrollToAdjacentInstagramReel(
+  video: HTMLVideoElement,
+  direction: ReelNavigationDirection,
+): HTMLVideoElement | null {
+  const targetVideo = findAdjacentInstagramReel(video, direction)
+  if (!targetVideo) return null
+
+  const target = resolveInstagramMount(targetVideo) ?? targetVideo
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  return targetVideo
 }
 
 interface StartInstagramIntegrationOptions {
