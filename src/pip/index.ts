@@ -1,10 +1,13 @@
 import type { PreferenceStore } from '../types'
 import {
   closeDocumentPictureInPictureForSource,
+  isDocumentPictureInPictureSource,
   subscribeDocumentPictureInPictureSource,
   supportsDocumentPictureInPicture,
   toggleDocumentPictureInPicture,
 } from './documentPip'
+
+export { isDocumentPictureInPictureSource }
 
 const PIP_ACTIVE_CLASS = 'irc-control-active'
 

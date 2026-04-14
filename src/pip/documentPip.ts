@@ -48,6 +48,10 @@ export function supportsDocumentPictureInPicture(video: HTMLVideoElement): boole
   return Boolean(getDocumentPictureInPictureAPI()) && supportsVideoStreamMirror(video)
 }
 
+export function isDocumentPictureInPictureSource(video: HTMLVideoElement): boolean {
+  return activeSession?.isOpen() === true && activeSession.hasSource(video)
+}
+
 export function subscribeDocumentPictureInPictureSource(
   listener: (sourceVideo: HTMLVideoElement | null) => void,
 ): () => void {
@@ -309,7 +313,7 @@ class DocumentPictureInPictureSession {
   private async followAutoplayToNextSource(
     sourceVideo: HTMLVideoElement,
     targetVideo: HTMLVideoElement,
-  ): Promise<void> {
+  ): Promise<boolean> {
     let sourceChanged = false
     try {
       sourceChanged = await this.setSource(targetVideo, { transitionDirection: 'next' })
@@ -322,6 +326,8 @@ class DocumentPictureInPictureSession {
     if (sourceChanged) {
       this.sync?.updatePlayButton()
     }
+
+    return sourceChanged
   }
 
   private bindPictureInPictureEvents(ownerDocument: Document, signal: AbortSignal): void {

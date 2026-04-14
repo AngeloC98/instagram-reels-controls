@@ -394,6 +394,27 @@ describe('bindDocumentPictureInPictureButton', () => {
     }
   })
 
+  it('keeps the current reel in place when autoplay cannot capture the next PiP source', async () => {
+    const { firstVideo, scrollSecondIntoView, secondCaptureStream, open, cleanup } =
+      createTwoReelPipFixture({ autoplayNext: true })
+    const animationMock = mockElementAnimate()
+
+    try {
+      await open()
+      secondCaptureStream.mockReturnValue(null as unknown as MediaStream)
+
+      firstVideo.dispatchEvent(new Event('ended'))
+      await flushAsyncWork()
+
+      expect(secondCaptureStream).toHaveBeenCalled()
+      expect(scrollSecondIntoView).not.toHaveBeenCalled()
+      expect(animationMock.calls).toHaveLength(0)
+    } finally {
+      cleanup()
+      animationMock.restore()
+    }
+  })
+
   it('keeps source refreshes on the incoming PiP video during reel animation', async () => {
     const { secondVideo, pipWindow, open, wheelNext, cleanup } = createTwoReelPipFixture()
     const animationMock = mockElementAnimate({ defer: true })

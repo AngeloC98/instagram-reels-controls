@@ -6,7 +6,8 @@ const autoplayButtons = new Set<HTMLButtonElement>()
 
 interface AutoplayAdvanceOptions {
   canAdvance?: (targetVideo: HTMLVideoElement) => boolean
-  onAdvance?: (targetVideo: HTMLVideoElement) => Promise<void> | void
+  onAdvance?: (targetVideo: HTMLVideoElement) => Promise<boolean | undefined> | boolean | undefined
+  shouldHandle?: () => boolean
 }
 
 function setAutoplayButtonState(button: HTMLButtonElement, enabled: boolean): void {
@@ -76,18 +77,18 @@ export async function advanceToNextReel(
   const targetVideo = findAutoplayNextReel(video, options)
   if (!targetVideo) return false
 
+  try {
+    if ((await options.onAdvance?.(targetVideo)) === false) return false
+  } catch {
+    return false
+  }
+
   scrollInstagramReelIntoView(targetVideo)
 
   try {
     await targetVideo.play()
   } catch {
     // Autoplay can be blocked; still advance the visible reel and let the controls reflect reality.
-  }
-
-  try {
-    await options.onAdvance?.(targetVideo)
-  } catch {
-    return false
   }
 
   return true
@@ -104,7 +105,12 @@ export function bindAutoplayNextReel(
   video.addEventListener(
     'ended',
     () => {
-      if (!preferences.getSnapshot().autoplayNext || advancing) return
+      if (
+        !preferences.getSnapshot().autoplayNext ||
+        advancing ||
+        options.shouldHandle?.() === false
+      )
+        return
 
       advancing = true
       void advanceToNextReel(video, options).finally(() => {

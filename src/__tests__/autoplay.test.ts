@@ -164,4 +164,32 @@ describe('autoplay next reel', () => {
     expect(scrollSecondIntoView).not.toHaveBeenCalled()
     expect(playSecond).not.toHaveBeenCalled()
   })
+
+  it('does not handle ended events rejected by the caller', async () => {
+    const { firstVideo, playSecond, scrollSecondIntoView } = createTwoReels()
+    const { store } = createPreferenceStore({ autoplayNext: true })
+    const ac = new AbortController()
+
+    bindAutoplayNextReel(firstVideo, store, ac.signal, { shouldHandle: () => false })
+    firstVideo.dispatchEvent(new Event('ended'))
+    await flushAsyncWork()
+
+    expect(scrollSecondIntoView).not.toHaveBeenCalled()
+    expect(playSecond).not.toHaveBeenCalled()
+  })
+
+  it('does not scroll or play when the advance hook rejects the target', async () => {
+    const { firstVideo, playSecond, scrollSecondIntoView } = createTwoReels()
+    const { store } = createPreferenceStore({ autoplayNext: true })
+    const ac = new AbortController()
+    const onAdvance = vi.fn(() => false)
+
+    bindAutoplayNextReel(firstVideo, store, ac.signal, { onAdvance })
+    firstVideo.dispatchEvent(new Event('ended'))
+    await flushAsyncWork()
+
+    expect(onAdvance).toHaveBeenCalledTimes(1)
+    expect(scrollSecondIntoView).not.toHaveBeenCalled()
+    expect(playSecond).not.toHaveBeenCalled()
+  })
 })
