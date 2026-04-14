@@ -1,3 +1,4 @@
+import autoplayNextIcon from '../icons/autoplay-next.svg?raw'
 import pauseIcon from '../icons/pause.svg?raw'
 import playIcon from '../icons/play.svg?raw'
 import volumeHighIcon from '../icons/vol-high.svg?raw'
@@ -7,6 +8,7 @@ import volumeMuteIcon from '../icons/vol-mute.svg?raw'
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
 export const ICON = {
+  autoplayNext: autoplayNextIcon,
   play: playIcon,
   pause: pauseIcon,
   volHigh: volumeHighIcon,

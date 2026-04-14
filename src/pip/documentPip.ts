@@ -1,4 +1,5 @@
 import type { ControlElements, PreferenceStore, SyncHandlers, TickLoop } from '../types'
+import { bindAutoplayButton, bindAutoplayNextReel, findAutoplayNextReel } from '../autoplay'
 import { applyControlPreferences } from '../controlPreferences'
 import { createControlsDOM } from '../dom'
 import { wireEvents } from '../events'
@@ -45,6 +46,10 @@ function stopStream(stream: MediaStream | null): void {
 
 export function supportsDocumentPictureInPicture(video: HTMLVideoElement): boolean {
   return Boolean(getDocumentPictureInPictureAPI()) && supportsVideoStreamMirror(video)
+}
+
+export function isDocumentPictureInPictureSource(video: HTMLVideoElement): boolean {
+  return activeSession?.isOpen() === true && activeSession.hasSource(video)
 }
 
 export function subscribeDocumentPictureInPictureSource(
@@ -291,6 +296,11 @@ class DocumentPictureInPictureSession {
       ac.signal,
       options.initiallyVisible ? { initiallyVisible: true } : {},
     )
+    bindAutoplayButton(els.autoplayBtn, this.preferences, ac.signal)
+    bindAutoplayNextReel(video, this.preferences, ac.signal, {
+      canAdvance: supportsDocumentPictureInPicture,
+      onAdvance: (targetVideo) => this.followAutoplayToNextSource(video, targetVideo),
+    })
     applyControlPreferences(video, els, this.preferences)
     sync.updatePlayButton()
     sync.updateSeek()
@@ -298,6 +308,26 @@ class DocumentPictureInPictureSession {
     if (!video.paused) tickLoop.start()
 
     this.bindPictureInPictureEvents(els.bar.ownerDocument, ac.signal)
+  }
+
+  private async followAutoplayToNextSource(
+    sourceVideo: HTMLVideoElement,
+    targetVideo: HTMLVideoElement,
+  ): Promise<boolean> {
+    let sourceChanged = false
+    try {
+      sourceChanged = await this.setSource(targetVideo, { transitionDirection: 'next' })
+    } finally {
+      if (!sourceChanged && this.sourceVideo === sourceVideo) {
+        await this.restartSourceVideo(sourceVideo)
+      }
+    }
+
+    if (sourceChanged) {
+      this.sync?.updatePlayButton()
+    }
+
+    return sourceChanged
   }
 
   private bindPictureInPictureEvents(ownerDocument: Document, signal: AbortSignal): void {
@@ -360,15 +390,30 @@ class DocumentPictureInPictureSession {
       'ended',
       () => {
         if (this.sourceVideo !== video) return
-        video.currentTime = 0
-        void video.play()
-        refreshMirror()
+        if (
+          this.preferences.getSnapshot().autoplayNext &&
+          findAutoplayNextReel(video, { canAdvance: supportsDocumentPictureInPicture })
+        ) {
+          return
+        }
+
+        void this.restartSourceVideo(video)
       },
       { signal: ac.signal },
     )
     video.addEventListener('emptied', refreshMirror, { signal: ac.signal })
     video.addEventListener('loadeddata', refreshMirror, { signal: ac.signal })
     mirrorVideo?.addEventListener('ended', refreshMirror, { signal: ac.signal })
+  }
+
+  private async restartSourceVideo(video: HTMLVideoElement): Promise<void> {
+    video.currentTime = 0
+    try {
+      await video.play()
+    } catch {
+      // The user can still press play in the PiP controls if playback is blocked.
+    }
+    void this.refreshMirrorStream(video)
   }
 
   private createMirrorVideo(): HTMLVideoElement {

@@ -6,6 +6,7 @@ export interface ControlElements {
   seekThumb: HTMLDivElement
   timeLabel: HTMLSpanElement
   pipBtn?: HTMLButtonElement
+  autoplayBtn: HTMLButtonElement
   speedBtn: HTMLButtonElement
   speedMenu: HTMLDivElement
   speedOptions: HTMLDivElement[]
@@ -31,6 +32,7 @@ export interface Preferences {
   muted: boolean
   volume: number
   speed: number
+  autoplayNext: boolean
 }
 
 export interface PreferenceSnapshot extends Preferences {
@@ -43,6 +45,7 @@ export interface PreferenceStore {
   setMuted: (value: boolean) => void
   setVolume: (value: number) => void
   setSpeed: (value: number) => void
+  setAutoplayNext: (value: boolean) => void
   markUserInteracted: () => void
   save: () => void
 }

@@ -1,10 +1,11 @@
 import type { PreferenceStore } from './types'
 import { applyControlPreferences } from './controlPreferences'
+import { bindAutoplayButton, bindAutoplayNextReel } from './autoplay'
 import { createControlsDOM } from './dom'
 import { createSyncHandlers, createTickLoop } from './sync'
 import { wireEvents } from './events'
 import { preferenceStore } from './preferences'
-import { bindDocumentPictureInPictureButton } from './pip'
+import { bindDocumentPictureInPictureButton, isDocumentPictureInPictureSource } from './pip'
 import { PICTURE_IN_PICTURE_ICON } from './pip/icon'
 import { ENABLE_DOCUMENT_PIP } from './buildFlags'
 
@@ -35,6 +36,10 @@ export function buildControls(
 
   mount.appendChild(els.bar)
   wireEvents(video, els, sync, tickLoop, preferences, ac.signal)
+  bindAutoplayButton(els.autoplayBtn, preferences, ac.signal)
+  bindAutoplayNextReel(video, preferences, ac.signal, {
+    shouldHandle: () => !isDocumentPictureInPictureSource(video),
+  })
   if (ENABLE_DOCUMENT_PIP && els.pipBtn) {
     bindDocumentPictureInPictureButton(video, els.pipBtn, preferences, ac.signal)
   }

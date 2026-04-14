@@ -2,20 +2,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { bindDocumentPictureInPictureButton } from '../pip'
 import { closeDocumentPictureInPictureForSource } from '../pip/documentPip'
 import { supportsVideoStreamMirror, captureVideoStream } from '../pip/videoSource'
-import type { PreferenceStore } from '../types'
+import type { PreferenceSnapshot, PreferenceStore } from '../types'
 
-function createPreferenceStore(): PreferenceStore {
+function createPreferenceStore(initial: Partial<PreferenceSnapshot> = {}): PreferenceStore {
   return {
     ready: Promise.resolve(),
     getSnapshot: () => ({
       muted: false,
       volume: 1,
       speed: 1,
+      autoplayNext: false,
       userInteracted: false,
+      ...initial,
     }),
     setMuted: vi.fn(),
     setVolume: vi.fn(),
     setSpeed: vi.fn(),
+    setAutoplayNext: vi.fn(),
     markUserInteracted: vi.fn(),
     save: vi.fn(),
   }
@@ -105,9 +108,11 @@ async function flushAsyncWork(): Promise<void> {
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
 }
 
-function createTwoReelPipFixture(): {
+function createTwoReelPipFixture(initialPrefs: Partial<PreferenceSnapshot> = {}): {
   firstVideo: HTMLVideoElement
   secondVideo: HTMLVideoElement
+  scrollSecondIntoView: ReturnType<typeof vi.fn>
+  secondCaptureStream: ReturnType<typeof vi.fn>
   pipWindow: MockPictureInPictureWindow
   open: () => Promise<void>
   wheelNext: () => Promise<void>
@@ -121,14 +126,17 @@ function createTwoReelPipFixture(): {
   const button = document.createElement('button')
   const ac = new AbortController()
   const pipWindow = createPictureInPictureWindow()
-  const videosWithTop: [HTMLVideoElement, number][] = [
-    [firstVideo, 100],
-    [secondVideo, 500],
+  const firstCaptureStream = vi.fn(createMediaStream)
+  const secondCaptureStream = vi.fn(createMediaStream)
+  const scrollSecondIntoView = vi.fn()
+  const videosWithTop: [HTMLVideoElement, number, ReturnType<typeof vi.fn>][] = [
+    [firstVideo, 100, firstCaptureStream],
+    [secondVideo, 500, secondCaptureStream],
   ]
 
   vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
 
-  videosWithTop.forEach(([video, top]) => {
+  videosWithTop.forEach(([video, top, captureStream]) => {
     Object.defineProperty(video, 'offsetWidth', {
       configurable: true,
       value: 360,
@@ -139,12 +147,12 @@ function createTwoReelPipFixture(): {
     })
     Object.defineProperty(video, 'captureStream', {
       configurable: true,
-      value: vi.fn(createMediaStream),
+      value: captureStream,
     })
   })
   Object.defineProperty(secondMount, 'scrollIntoView', {
     configurable: true,
-    value: vi.fn(),
+    value: scrollSecondIntoView,
   })
   Object.defineProperty(window, 'documentPictureInPicture', {
     configurable: true,
@@ -161,9 +169,16 @@ function createTwoReelPipFixture(): {
   return {
     firstVideo,
     secondVideo,
+    scrollSecondIntoView,
+    secondCaptureStream,
     pipWindow,
     open: async () => {
-      bindDocumentPictureInPictureButton(firstVideo, button, createPreferenceStore(), ac.signal)
+      bindDocumentPictureInPictureButton(
+        firstVideo,
+        button,
+        createPreferenceStore(initialPrefs),
+        ac.signal,
+      )
       button.click()
       await flushAsyncWork()
     },
@@ -338,6 +353,62 @@ describe('bindDocumentPictureInPictureButton', () => {
         [{ transform: 'translateY(100%)' }, { transform: 'translateY(0)' }],
       ])
       expect(animationMock.calls.map((call) => call.options.duration)).toEqual([420, 420])
+    } finally {
+      cleanup()
+      animationMock.restore()
+    }
+  })
+
+  it('keeps PiP following autoplay to the next reel', async () => {
+    const { firstVideo, scrollSecondIntoView, secondCaptureStream, pipWindow, open, cleanup } =
+      createTwoReelPipFixture({ autoplayNext: true })
+    const animationMock = mockElementAnimate()
+
+    try {
+      await open()
+
+      const controlsBeforeNavigation = pipWindow.document.querySelector('.irc-controls')
+      controlsBeforeNavigation?.classList.add('irc-controls-visible')
+
+      firstVideo.dispatchEvent(new Event('ended'))
+      await flushAsyncWork()
+
+      expect(scrollSecondIntoView).toHaveBeenCalledWith({
+        behavior: 'smooth',
+        block: 'center',
+      })
+      expect(secondCaptureStream).toHaveBeenCalled()
+      expect(
+        pipWindow.document
+          .querySelector('.irc-controls')
+          ?.classList.contains('irc-controls-visible'),
+      ).toBe(true)
+      expect(pipWindow.document.querySelector('.irc-controls')).toBe(controlsBeforeNavigation)
+      expect(animationMock.calls.map((call) => call.keyframes)).toEqual([
+        [{ transform: 'translateY(0)' }, { transform: 'translateY(-100%)' }],
+        [{ transform: 'translateY(100%)' }, { transform: 'translateY(0)' }],
+      ])
+    } finally {
+      cleanup()
+      animationMock.restore()
+    }
+  })
+
+  it('keeps the current reel in place when autoplay cannot capture the next PiP source', async () => {
+    const { firstVideo, scrollSecondIntoView, secondCaptureStream, open, cleanup } =
+      createTwoReelPipFixture({ autoplayNext: true })
+    const animationMock = mockElementAnimate()
+
+    try {
+      await open()
+      secondCaptureStream.mockReturnValue(null as unknown as MediaStream)
+
+      firstVideo.dispatchEvent(new Event('ended'))
+      await flushAsyncWork()
+
+      expect(secondCaptureStream).toHaveBeenCalled()
+      expect(scrollSecondIntoView).not.toHaveBeenCalled()
+      expect(animationMock.calls).toHaveLength(0)
     } finally {
       cleanup()
       animationMock.restore()

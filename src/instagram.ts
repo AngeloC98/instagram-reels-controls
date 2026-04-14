@@ -77,9 +77,13 @@ export function scrollToAdjacentInstagramReel(
   const targetVideo = findAdjacentInstagramReel(video, direction)
   if (!targetVideo) return null
 
-  const target = resolveInstagramMount(targetVideo) ?? targetVideo
-  target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  scrollInstagramReelIntoView(targetVideo)
   return targetVideo
+}
+
+export function scrollInstagramReelIntoView(video: HTMLVideoElement): void {
+  const target = resolveInstagramMount(video) ?? video
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
 interface StartInstagramIntegrationOptions {

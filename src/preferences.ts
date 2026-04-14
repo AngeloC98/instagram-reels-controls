@@ -7,15 +7,17 @@ const state: PreferenceSnapshot = {
   muted: true,
   volume: 1,
   speed: 1,
+  autoplayNext: false,
   userInteracted: false,
 }
 
 const ready: Promise<void> = storage
-  .get(['muted', 'volume', 'speed'])
+  .get(['muted', 'volume', 'speed', 'autoplayNext'])
   .then((prefs: Partial<Preferences>) => {
     if (prefs.muted !== undefined) state.muted = prefs.muted
     if (prefs.volume !== undefined) state.volume = prefs.volume
     if (prefs.speed !== undefined) state.speed = prefs.speed
+    if (prefs.autoplayNext !== undefined) state.autoplayNext = prefs.autoplayNext
   })
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null
@@ -34,6 +36,9 @@ export const preferenceStore: PreferenceStore = {
   setSpeed(value: number) {
     state.speed = value
   },
+  setAutoplayNext(value: boolean) {
+    state.autoplayNext = value
+  },
   markUserInteracted() {
     state.userInteracted = true
   },
@@ -44,6 +49,7 @@ export const preferenceStore: PreferenceStore = {
         muted: state.muted,
         volume: state.volume,
         speed: state.speed,
+        autoplayNext: state.autoplayNext,
       })
     }, 300)
   },

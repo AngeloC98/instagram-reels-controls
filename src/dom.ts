@@ -1,5 +1,5 @@
 import type { ControlElements } from './types'
-import { setIcon } from './icons'
+import { ICON, setIcon } from './icons'
 import { ENABLE_DOCUMENT_PIP } from './buildFlags'
 
 const CONTROLS_CLASS = 'irc-controls'
@@ -64,6 +64,12 @@ export function createControlsDOM(options: CreateControlsDOMOptions = {}): Contr
     title: 'Playback speed',
     textContent: '1\u00D7',
   })
+  const autoplayBtn = create('button', {
+    className: 'irc-control-button irc-compact-control irc-icon-control irc-btn irc-autoplay-btn',
+    title: 'Autoplay',
+    'aria-label': 'Autoplay',
+    'aria-pressed': 'false',
+  })
 
   const speedOptions = SPEED_OPTIONS.map((v) =>
     create('div', {
@@ -91,12 +97,14 @@ export function createControlsDOM(options: CreateControlsDOMOptions = {}): Contr
     : undefined
 
   if (pipBtn && options.pictureInPictureIcon) setIcon(pipBtn, options.pictureInPictureIcon)
+  setIcon(autoplayBtn, ICON.autoplayNext)
 
   const upperChildren = [
     playBtn,
     create('div', { className: 'irc-vol-group' }, [muteBtn, volTrack]),
     timeLabel,
     pipBtn,
+    autoplayBtn,
     create('div', { className: 'irc-speed-wrap' }, [speedBtn]),
   ].filter((child): child is HTMLElement => Boolean(child))
 
@@ -119,6 +127,7 @@ export function createControlsDOM(options: CreateControlsDOMOptions = {}): Contr
     seekFill,
     seekThumb,
     timeLabel,
+    autoplayBtn,
     speedBtn,
     speedMenu,
     speedOptions,
