@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Instagram Reels Controls",
-  "version": "1.0.3",
-  "description": "Adds standard media controls to Instagram Reels.",
+  "version": "1.1.0",
+  "description": "Adds media controls to Instagram Reels and video posts.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",

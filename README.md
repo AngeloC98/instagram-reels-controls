@@ -1,13 +1,15 @@
 # Instagram Reels Controls
 
-A browser extension that adds standard media controls to Instagram Reels and videos.
+A browser extension that adds media controls to Instagram Reels and video posts.
 
 ## Features
 
-- Full media controls: play/pause, seek, volume, time display
-- Playback speed picker (0.25x - 2x)
-- Volume and speed preferences persist across sessions
-- Works on Reels and regular video posts
+- Play/pause, seek, volume, and time display for Instagram videos
+- Playback speed picker from 0.25x to 2x
+- Persists volume, speed, and autoplay preferences across sessions
+- Optional autoplay that advances to the next reel
+- Chrome Document Picture-in-Picture support with reel navigation
+- Scroll-aware controls that stay out of the way while browsing
 
 ## Install
 
@@ -17,60 +19,79 @@ Install from [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/instagra
 
 ### Chrome
 
-Install from the [Chrome Web Store](https://chrome.google.com/webstore/detail/fbojkcimdhmbafddcipholkgjfoanani).
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/instagram-reels-controls/fbojkcimdhmbafddcipholkgjfoanani).
 
-### Manual install
+### Manual Install
 
-You can also build from source and load the extension manually:
+You can build from source and load the extension manually:
 
 ```bash
-npm install
-npm run build           # builds both targets
+npm ci
+npm run build
 ```
 
-- **Firefox:** `about:debugging` > Load Temporary Add-on > select `dist/firefox/manifest.json`
-- **Chrome:** `chrome://extensions` > Developer mode > Load unpacked > select `dist/chrome/`
+- Firefox: open `about:debugging`, choose Load Temporary Add-on, then select `dist/firefox/manifest.json`.
+- Chrome: open `chrome://extensions`, enable Developer mode, choose Load unpacked, then select `dist/chrome/`.
 
 ## Development
 
 ```bash
-npm install
-npm run dev           # watch mode
+npm ci
+npm run dev           # watch build, defaults to Firefox
 npm run build         # build both targets
-npm run test          # run tests
-npm run lint          # eslint + prettier check
-npm run format        # prettier fix
-npm run icons         # regenerate icon PNGs from SVG
+npm run test          # run Vitest tests
+npm run lint          # ESLint + Prettier check
+npm run typecheck     # TypeScript typecheck
+npm run format        # Prettier auto-fix
+npm run icons         # regenerate icon PNGs
 ```
 
-### Project structure
+### Release Build
 
+```bash
+npm run build
+npm run zip:firefox
+npm run zip:chrome
 ```
+
+Release zips are written to `dist/` and include the version from `manifests/base.json`.
+
+## Project Structure
+
+```text
 src/
-  browser.ts       - browser compat shim (Firefox/Chrome)
-  types.ts         - shared TypeScript interfaces
-  icons.ts         - icon URLs + setIcon helper
-  preferences.ts   - storage load/save + state
-  instagram.ts     - Instagram page integration + video discovery
-  dom.ts           - DOM builder + controls creation
-  sync.ts          - video-to-UI state sync + tick loop
-  events.ts        - event listener wiring
-  controlsVisibility.ts - show/hide state machine for controls bar
-  controls.ts      - controls orchestrator
-  index.ts         - entry point (adapter startup)
+  index.ts              - content-script entry point
+  browser.ts            - Firefox/Chrome extension API shim
+  buildFlags.ts         - per-target feature flags
+  instagram.ts          - Instagram video discovery and reel navigation
+  controls.ts           - control injection and teardown orchestration
+  dom.ts                - control DOM construction
+  events.ts             - control event wiring
+  sync.ts               - video-to-control UI synchronization
+  preferences.ts        - storage-backed preference state
+  autoplay.ts           - autoplay-next-reel behavior
+  controlPreferences.ts - applies saved preferences to videos and controls
+  controlsVisibility.ts - show/hide state machine for controls
+  pointerActivity.ts    - pointer movement tracking for visibility
+  types.ts              - shared TypeScript interfaces
+  icons.ts              - SVG icon loading helpers
+  pip/                  - Chrome Document Picture-in-Picture support
 manifests/
-  base.json        - shared manifest fields
-  firefox.json     - Firefox-specific overrides
-  chrome.json      - Chrome-specific overrides
+  base.json             - shared Manifest V3 fields
+  firefox.json          - Firefox-specific manifest fields
+  chrome.json           - Chrome-specific manifest fields
+scripts/
+  generate-icons.ts     - icon PNG generation via Puppeteer
+  zip.ts                - release zip builder
 ```
 
-### Build output
+## Build Output
 
-Vite bundles `src/index.ts` into a single IIFE `content.js`. Manifests are merged per target. Output goes to `dist/{firefox,chrome}/`.
+Vite bundles `src/index.ts` into a single IIFE `content.js`. A custom Vite plugin merges the shared and target-specific manifests, copies `content.css`, and copies `icons/` into `dist/{firefox,chrome}/`.
 
-## Tech stack
+## Tech Stack
 
-TypeScript, Vite, Vitest, ESLint (strict-type-checked), Prettier
+TypeScript with strict checking, Vite, Vitest with jsdom, ESLint, Prettier, and Puppeteer for icon generation.
 
 ## License
 

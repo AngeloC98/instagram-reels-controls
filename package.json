@@ -1,6 +1,6 @@
 {
   "name": "instagram-reels-controls",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "lint": "eslint src scripts vite.config.ts vitest.config.ts && prettier --check src scripts vite.config.ts vitest.config.ts content.css",
     "format": "prettier --write src scripts vite.config.ts vitest.config.ts content.css",
-    "icons": "tsx scripts/generate-icons.ts"
+    "icons": "tsx scripts/generate-icons.ts",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.39",
