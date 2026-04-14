@@ -3,7 +3,7 @@ import type { PreferenceSnapshot, PreferenceStore } from '../types'
 
 const pipMock = vi.hoisted(() => ({
   bindDocumentPictureInPictureButton: vi.fn(),
-  isDocumentPictureInPictureSource: vi.fn(() => false),
+  isDocumentPictureInPictureSource: vi.fn((video: HTMLVideoElement) => video.tagName === 'IFRAME'),
 }))
 
 vi.mock('../browser', () => ({
