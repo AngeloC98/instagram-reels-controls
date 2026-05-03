@@ -655,4 +655,42 @@ describe('wireEvents', () => {
     expect(video.muted).toBe(false)
     expect(video.volume).toBe(0.4)
   })
+
+  it('reasserts mute preference on play for reels Instagram silenced before user interacted', () => {
+    const { video } = createMockVideo({ muted: true, volume: 1 })
+    const { store } = createPreferenceStore({
+      muted: false,
+      volume: 0.4,
+      userInteracted: true,
+    })
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+    video.dispatchEvent(new Event('play'))
+
+    expect(video.muted).toBe(false)
+    expect(video.volume).toBe(0.4)
+  })
+
+  it('does not force mute state on play before the user has interacted', () => {
+    const { video } = createMockVideo({ muted: true, volume: 1 })
+    const { store } = createPreferenceStore({
+      muted: false,
+      volume: 0.4,
+      userInteracted: false,
+    })
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+    video.dispatchEvent(new Event('play'))
+
+    expect(video.muted).toBe(true)
+    expect(video.volume).toBe(1)
+  })
 })

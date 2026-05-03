@@ -5,6 +5,7 @@ import { createControlsDOM } from '../dom'
 import { wireEvents } from '../events'
 import { scrollToAdjacentInstagramReel, type ReelNavigationDirection } from '../instagram'
 import { createSyncHandlers, createTickLoop } from '../sync'
+import { trackActiveInstagramReel } from './activeReelTracker'
 import { getDocumentPictureInPictureAPI } from './capabilities'
 import { injectDocumentPictureInPictureStyles } from './styles'
 import { captureVideoStream, supportsVideoStreamMirror } from './videoSource'
@@ -128,6 +129,7 @@ class DocumentPictureInPictureSession {
   private controlElements: ControlElements | null = null
   private mirrorVideo: HTMLVideoElement | null = null
   private stage: HTMLDivElement | null = null
+  private sessionAbort: AbortController | null = null
   private sourceAbort: AbortController | null = null
   private sourceVideo: HTMLVideoElement | null = null
   private stream: MediaStream | null = null
@@ -176,6 +178,15 @@ class DocumentPictureInPictureSession {
     videoLayer.appendChild(this.mirrorVideo)
     stage.appendChild(videoLayer)
     pipDocument.body.appendChild(stage)
+
+    this.sessionAbort = new AbortController()
+    trackActiveInstagramReel(this.sessionAbort.signal, {
+      getCurrentSource: () => this.sourceVideo,
+      isBusy: () => this.navigating,
+      onActiveReelChange: (next) => {
+        void this.followActiveReel(next)
+      },
+    })
 
     if (!(await this.setSource(video))) throw new Error('Unable to mirror video into Document PiP')
   }
@@ -244,6 +255,8 @@ class DocumentPictureInPictureSession {
     if (this.destroyed) return
 
     this.destroyed = true
+    this.sessionAbort?.abort()
+    this.sessionAbort = null
     this.abortControls()
     this.abortSourceEvents()
     stopStream(this.stream)
@@ -555,6 +568,27 @@ class DocumentPictureInPictureSession {
       await mirrorVideo?.play()
     } catch {
       // The mirrored stream can still render once the source video starts playing.
+    }
+  }
+
+  private async followActiveReel(targetVideo: HTMLVideoElement): Promise<void> {
+    if (this.destroyed || this.navigating) return
+
+    const currentSource = this.sourceVideo
+    if (!currentSource || currentSource === targetVideo) return
+    if (!supportsDocumentPictureInPicture(targetVideo)) return
+
+    const direction: ReelNavigationDirection =
+      targetVideo.getBoundingClientRect().top >= currentSource.getBoundingClientRect().top
+        ? 'next'
+        : 'previous'
+
+    this.navigating = true
+    try {
+      if (!(await this.setSource(targetVideo, { transitionDirection: direction }))) return
+      this.sync?.updatePlayButton()
+    } finally {
+      this.navigating = false
     }
   }
 
