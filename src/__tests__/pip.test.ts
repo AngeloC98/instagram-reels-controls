@@ -108,6 +108,15 @@ async function flushAsyncWork(): Promise<void> {
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
 }
 
+function setDocumentHidden(hidden: boolean): void {
+  Object.defineProperty(document, 'hidden', { configurable: true, value: hidden })
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    value: hidden ? 'hidden' : 'visible',
+  })
+  document.dispatchEvent(new Event('visibilitychange'))
+}
+
 function createTwoReelPipFixture(initialPrefs: Partial<PreferenceSnapshot> = {}): {
   firstVideo: HTMLVideoElement
   secondVideo: HTMLVideoElement
@@ -448,5 +457,144 @@ describe('bindDocumentPictureInPictureButton', () => {
       cleanup()
       animationMock.restore()
     }
+  })
+
+  describe('manual scroll follows the active reel', () => {
+    function markPlaying(video: HTMLVideoElement, paused: boolean): void {
+      Object.defineProperty(video, 'paused', { configurable: true, value: paused })
+    }
+
+    function dispatchPlay(video: HTMLVideoElement): void {
+      video.dispatchEvent(new Event('play'))
+    }
+
+    async function advanceDebounce(ms = 200): Promise<void> {
+      await vi.advanceTimersByTimeAsync(ms)
+      await flushAsyncWork()
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+      setDocumentHidden(false)
+    })
+
+    it('coalesces a fast scroll across multiple reels into a single swap', async () => {
+      const { firstVideo, secondVideo, secondCaptureStream, open, cleanup } =
+        createTwoReelPipFixture()
+      const animationMock = mockElementAnimate()
+
+      try {
+        await open()
+        markPlaying(firstVideo, true)
+        markPlaying(secondVideo, false)
+
+        // Burst of three plays within the debounce window — only the last
+        // (secondVideo, still playing) should drive the swap.
+        dispatchPlay(secondVideo)
+        markPlaying(secondVideo, true)
+        dispatchPlay(firstVideo)
+        markPlaying(secondVideo, false)
+        dispatchPlay(secondVideo)
+        await advanceDebounce()
+
+        expect(secondCaptureStream).toHaveBeenCalledTimes(1)
+        // Two animate() calls per swap (outgoing + incoming), so a single
+        // swap means exactly two calls.
+        expect(animationMock.calls).toHaveLength(2)
+      } finally {
+        cleanup()
+        animationMock.restore()
+      }
+    })
+
+    it('animates "previous" when the new active reel is above the current one', async () => {
+      const { firstVideo, secondVideo, cleanup } = createTwoReelPipFixture()
+      const animationMock = mockElementAnimate()
+      const button = document.createElement('button')
+      const ac = new AbortController()
+
+      try {
+        // Open PiP starting on the *second* (lower) reel so we can scroll up.
+        bindDocumentPictureInPictureButton(secondVideo, button, createPreferenceStore(), ac.signal)
+        button.click()
+        await flushAsyncWork()
+
+        markPlaying(secondVideo, true)
+        markPlaying(firstVideo, false)
+        dispatchPlay(firstVideo)
+        await advanceDebounce()
+
+        expect(animationMock.calls.map((call) => call.keyframes)).toEqual([
+          [{ transform: 'translateY(0)' }, { transform: 'translateY(100%)' }],
+          [{ transform: 'translateY(-100%)' }, { transform: 'translateY(0)' }],
+        ])
+      } finally {
+        ac.abort()
+        cleanup()
+        animationMock.restore()
+      }
+    })
+
+    it('does not swap while the document is hidden (e.g. minimized window)', async () => {
+      const { firstVideo, secondVideo, secondCaptureStream, open, cleanup } =
+        createTwoReelPipFixture()
+      const animationMock = mockElementAnimate()
+
+      try {
+        await open()
+        markPlaying(firstVideo, true)
+        markPlaying(secondVideo, false)
+
+        // Tab goes hidden (minimize). A spurious `play` event should not
+        // drive a swap, and any pending swap queued just before going
+        // hidden should be dropped.
+        dispatchPlay(secondVideo)
+        setDocumentHidden(true)
+        dispatchPlay(secondVideo)
+        await advanceDebounce()
+
+        expect(secondCaptureStream).not.toHaveBeenCalled()
+        expect(animationMock.calls).toHaveLength(0)
+
+        // Restoring the window allows future scrolls to swap normally.
+        setDocumentHidden(false)
+        dispatchPlay(secondVideo)
+        await advanceDebounce()
+
+        expect(secondCaptureStream).toHaveBeenCalledTimes(1)
+      } finally {
+        cleanup()
+        animationMock.restore()
+      }
+    })
+
+    it('ignores play events on videos outside the Instagram reel surface', async () => {
+      const { secondCaptureStream, open, cleanup } = createTwoReelPipFixture()
+      const animationMock = mockElementAnimate()
+      const strayVideo = document.createElement('video')
+      Object.defineProperty(strayVideo, 'offsetWidth', { configurable: true, value: 360 })
+      // Not appended under <main>, so isInstagramVideoCandidate returns false.
+      document.body.appendChild(strayVideo)
+
+      try {
+        await open()
+        markPlaying(strayVideo, false)
+        const initialCaptureCalls = secondCaptureStream.mock.calls.length
+
+        dispatchPlay(strayVideo)
+        await advanceDebounce()
+
+        expect(secondCaptureStream.mock.calls.length).toBe(initialCaptureCalls)
+        expect(animationMock.calls).toHaveLength(0)
+      } finally {
+        strayVideo.remove()
+        cleanup()
+        animationMock.restore()
+      }
+    })
   })
 })

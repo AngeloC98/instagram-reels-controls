@@ -186,17 +186,18 @@ function bindVideoSyncEvents(
     { signal: sig },
   )
 
-  // Override Instagram's volume resets, but only after user has interacted
-  video.addEventListener(
-    'volumechange',
-    () => {
-      const snapshot = preferences.getSnapshot()
-      if (!snapshot.userInteracted) return
-      if (video.muted !== snapshot.muted) video.muted = snapshot.muted
-      if (video.volume !== snapshot.volume) video.volume = snapshot.volume
-    },
-    { signal: sig },
-  )
+  // Re-assert the user's mute/volume preference. `volumechange` catches
+  // Instagram's resets once a video is being interacted with; `play` catches
+  // reels that Instagram set to muted before the user first interacted, which
+  // then never get a volumechange because nothing else touches them.
+  const reassertVolumePreference = (): void => {
+    const snapshot = preferences.getSnapshot()
+    if (!snapshot.userInteracted) return
+    if (video.muted !== snapshot.muted) video.muted = snapshot.muted
+    if (video.volume !== snapshot.volume) video.volume = snapshot.volume
+  }
+  video.addEventListener('volumechange', reassertVolumePreference, { signal: sig })
+  video.addEventListener('play', reassertVolumePreference, { signal: sig })
 }
 
 function bindPlayButton(
