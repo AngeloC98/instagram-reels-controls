@@ -43,6 +43,10 @@ function extensionPlugin(target: string) {
       writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2))
 
       writeFileSync(resolve(outDir, 'content.css'), readContentCss(target))
+      writeFileSync(
+        resolve(outDir, 'mainWorld.js'),
+        readFileSync(resolve(import.meta.dirname, 'static/mainWorld.js'), 'utf-8'),
+      )
       cpSync(resolve(import.meta.dirname, 'icons'), resolve(outDir, 'icons'), { recursive: true })
     },
   }
