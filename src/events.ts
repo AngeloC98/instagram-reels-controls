@@ -44,13 +44,13 @@ function positionSpeedMenu(
 
 function bindVisibilityEvents(
   bar: HTMLDivElement,
+  eventRoot: HTMLElement,
   speedMenu: HTMLDivElement,
   visibility: ControlsVisibilityMachine,
   sig: AbortSignal,
 ): void {
   const ownerDocument = bar.ownerDocument
-  const mount = bar.parentElement
-  if (!isElementInDocument(mount, ownerDocument)) return
+  if (!isElementInDocument(eventRoot, ownerDocument)) return
 
   let keyboardMayFocusControls = false
 
@@ -83,10 +83,10 @@ function bindVisibilityEvents(
     },
     { capture: true, signal: sig },
   )
-  mount.addEventListener('pointerenter', showFromMountMotion, { signal: sig })
-  mount.addEventListener('pointermove', showFromMountMotion, { signal: sig })
-  mount.addEventListener('pointerdown', handleMountPointerDown, { signal: sig })
-  mount.addEventListener(
+  eventRoot.addEventListener('pointerenter', showFromMountMotion, { signal: sig })
+  eventRoot.addEventListener('pointermove', showFromMountMotion, { signal: sig })
+  eventRoot.addEventListener('pointerdown', handleMountPointerDown, { signal: sig })
+  eventRoot.addEventListener(
     'pointerleave',
     () => {
       visibility.leavePlayer()
@@ -417,6 +417,7 @@ function bindVolumeEvents(
 
 interface WireEventsOptions {
   initiallyVisible?: boolean
+  eventRoot?: HTMLElement
 }
 
 export function wireEvents(
@@ -434,7 +435,8 @@ export function wireEvents(
     options.initiallyVisible ? { initiallyVisible: true } : {},
   )
 
-  bindVisibilityEvents(els.bar, els.speedMenu, visibility, sig)
+  const eventRoot = options.eventRoot ?? els.bar.parentElement
+  if (eventRoot) bindVisibilityEvents(els.bar, eventRoot, els.speedMenu, visibility, sig)
   bindBarEvents(els.bar, els.speedMenu, visibility, sig)
   bindVideoSyncEvents(video, sync, tickLoop, preferences, sig)
   bindPlayButton(video, els.playBtn, sig)
