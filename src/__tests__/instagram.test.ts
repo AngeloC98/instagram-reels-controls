@@ -3,6 +3,7 @@ import {
   findInstagramVideos,
   findAdjacentInstagramReel,
   isInstagramVideoCandidate,
+  resolveInstagramEventRoot,
   resolveInstagramMount,
   scrollToAdjacentInstagramReel,
   startInstagramIntegration,
@@ -98,6 +99,73 @@ describe('instagram adapter', () => {
     expect(resolveInstagramMount(video)).toBe(mount)
     expect(mount.style.position).toBe('')
     expect(mount.style.overflow).toBe('')
+  })
+
+  it('walks up to the highest ancestor that wraps the video bounds for event delegation', () => {
+    const reelRoot = document.createElement('div')
+    const wrapper = document.createElement('div')
+    const innerMount = document.createElement('div')
+    const video = document.createElement('video')
+
+    innerMount.appendChild(video)
+    wrapper.appendChild(innerMount)
+    reelRoot.appendChild(wrapper)
+    document.body.appendChild(reelRoot)
+
+    const videoRect = {
+      x: 10,
+      y: 20,
+      top: 20,
+      left: 10,
+      right: 470,
+      bottom: 836,
+      width: 460,
+      height: 816,
+      toJSON: () => ({}),
+    }
+    const sameRect = (rect: typeof videoRect) => () => ({ ...rect })
+    Object.defineProperty(video, 'getBoundingClientRect', {
+      configurable: true,
+      value: sameRect(videoRect),
+    })
+    Object.defineProperty(innerMount, 'getBoundingClientRect', {
+      configurable: true,
+      value: sameRect(videoRect),
+    })
+    Object.defineProperty(wrapper, 'getBoundingClientRect', {
+      configurable: true,
+      value: sameRect(videoRect),
+    })
+    Object.defineProperty(reelRoot, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ ...videoRect, width: 600, right: 610 }),
+    })
+
+    expect(resolveInstagramEventRoot(video)).toBe(wrapper)
+  })
+
+  it('falls back to the direct parent when the video has no rendered bounds', () => {
+    const innerMount = document.createElement('div')
+    const video = document.createElement('video')
+    innerMount.appendChild(video)
+    document.body.appendChild(innerMount)
+
+    Object.defineProperty(video, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: 0,
+        height: 0,
+        toJSON: () => ({}),
+      }),
+    })
+
+    expect(resolveInstagramEventRoot(video)).toBe(innerMount)
   })
 
   it('finds adjacent reels by vertical order', () => {

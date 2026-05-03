@@ -52,6 +52,32 @@ export function resolveInstagramMount(video: HTMLVideoElement): HTMLElement | nu
   return video.parentElement
 }
 
+const REEL_RECT_TOLERANCE = 0.5
+
+export function resolveInstagramEventRoot(video: HTMLVideoElement): HTMLElement | null {
+  const direct = video.parentElement
+  if (!direct) return null
+  const videoRect = video.getBoundingClientRect()
+  if (videoRect.width <= 0 || videoRect.height <= 0) return direct
+
+  let mount: HTMLElement = direct
+  let cursor: HTMLElement | null = direct.parentElement
+  while (cursor) {
+    const rect = cursor.getBoundingClientRect()
+    if (
+      Math.abs(rect.width - videoRect.width) > REEL_RECT_TOLERANCE ||
+      Math.abs(rect.height - videoRect.height) > REEL_RECT_TOLERANCE ||
+      Math.abs(rect.left - videoRect.left) > REEL_RECT_TOLERANCE ||
+      Math.abs(rect.top - videoRect.top) > REEL_RECT_TOLERANCE
+    ) {
+      break
+    }
+    mount = cursor
+    cursor = cursor.parentElement
+  }
+  return mount
+}
+
 function resolveNavigationScope(video: HTMLVideoElement): ParentNode {
   return video.closest('[role="dialog"]') ?? video.closest('main') ?? document
 }

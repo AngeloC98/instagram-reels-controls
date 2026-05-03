@@ -285,6 +285,28 @@ describe('wireEvents', () => {
     expect(save).toHaveBeenCalledTimes(1)
   })
 
+  it('reacts to pointer motion on Instagram overlay siblings outside the bar mount', () => {
+    const reelRoot = document.createElement('div')
+    const innerMount = document.createElement('div')
+    const igOverlay = document.createElement('div')
+    const { video } = createMockVideo()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    innerMount.append(video, els.bar)
+    reelRoot.append(innerMount, igOverlay)
+    document.body.appendChild(reelRoot)
+
+    wireEvents(video, els, sync, tickLoop, store, ac.signal, { eventRoot: reelRoot })
+
+    dispatchPointerEvent(igOverlay, 'pointermove', 50)
+
+    expect(els.bar.classList.contains('irc-controls-visible')).toBe(true)
+  })
+
   it('hides expanded controls after the pointer is idle over the video', () => {
     vi.useFakeTimers()
     const mount = document.createElement('div')

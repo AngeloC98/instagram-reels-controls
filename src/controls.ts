@@ -8,6 +8,7 @@ import { preferenceStore } from './preferences'
 import { bindDocumentPictureInPictureButton, isDocumentPictureInPictureSource } from './pip'
 import { PICTURE_IN_PICTURE_ICON } from './pip/icon'
 import { ENABLE_DOCUMENT_PIP } from './buildFlags'
+import { resolveInstagramEventRoot } from './instagram'
 
 const injected = new WeakMap<HTMLVideoElement, () => void>()
 
@@ -34,8 +35,12 @@ export function buildControls(
   const sync = createSyncHandlers(video, els)
   const tickLoop = createTickLoop(sync.updateSeek)
 
-  mount.appendChild(els.bar)
-  wireEvents(video, els, sync, tickLoop, preferences, ac.signal)
+  const eventRoot = resolveInstagramEventRoot(video) ?? mount
+  if (eventRoot !== mount && getComputedStyle(eventRoot).position === 'static') {
+    eventRoot.style.position = 'relative'
+  }
+  eventRoot.appendChild(els.bar)
+  wireEvents(video, els, sync, tickLoop, preferences, ac.signal, { eventRoot })
   bindAutoplayButton(els.autoplayBtn, preferences, ac.signal)
   bindAutoplayNextReel(video, preferences, ac.signal, {
     shouldHandle: () => !isDocumentPictureInPictureSource(video),
