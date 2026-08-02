@@ -23,38 +23,43 @@
   --irc-normal: 0.25s;
 }
 
-/* Resting: seek bar visible at top, full width, 3px */
+/* Resting: seek bar visible at bottom, full width, 3px */
 /* Active: slides to inset position, buttons appear, seek grows to 5px */
 .irc-controls {
   user-select: none;
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
   z-index: 9999;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   pointer-events: none;
   transition:
-    top var(--irc-normal) ease,
+    bottom var(--irc-normal) ease,
     left var(--irc-normal) ease,
     right var(--irc-normal) ease;
 }
 
 .irc-controls.irc-controls-visible {
-  top: 12px;
+  bottom: 12px;
   left: 10px;
   right: 10px;
   pointer-events: all;
+  gap: 8px;
 }
 
-/* Hide Instagram's native volume UI without depending on generated classes or localized labels. */
-.irc-mount [role='slider'][aria-valuemin='0'][aria-valuemax='100'][aria-valuenow] {
-  display: none !important;
+.irc-controls.irc-controls-visible .irc-lower {
+  margin-top: 0;
+  padding: 0 2px;
 }
 
-.irc-mount [role='button']:has(> svg[role='img'][viewBox='0 0 48 48'][width='16'][height='16']) {
-  display: none !important;
+/* Instagram's author/audio overlay is raised by the measured height needed to
+   clear the expanded controls. `translate` composes with Instagram's own
+   transforms, so its entrance animations remain intact. */
+.irc-native-overlay-lift {
+  translate: 0 calc(-1 * var(--irc-native-overlay-lift, 0px));
+  transition: translate var(--irc-normal) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .irc-row {
@@ -73,7 +78,7 @@
 }
 
 .irc-controls.irc-controls-visible .irc-lower {
-  margin-top: 8px;
+  margin-top: 0;
   padding: 0 2px;
 }
 
@@ -143,7 +148,7 @@
   backdrop-filter: var(--irc-blur);
   -webkit-backdrop-filter: var(--irc-blur);
   border-radius: var(--irc-radius-pill);
-  padding: 0 10px;
+  padding: 0 5px;
   gap: 4px;
   width: 100%;
   box-sizing: border-box;
@@ -152,7 +157,7 @@
   opacity: 0;
   max-height: 0;
   overflow: hidden;
-  transform: translateY(-6px);
+  transform: translateY(6px);
   transition:
     opacity var(--irc-normal) ease,
     max-height var(--irc-normal) ease,
@@ -163,11 +168,18 @@
 .irc-controls.irc-controls-visible .irc-upper {
   opacity: 1;
   max-height: 50px;
-  padding: 5px 10px;
+  padding: 5px 5px;
   border: 1px solid var(--irc-border);
   transform: translateY(0);
   overflow: visible;
   z-index: 1;
+}
+
+/* 控制条在底部时，速度菜单应向上弹出（避免超出视口底部） */
+.irc-speed-menu {
+  top: auto !important;
+  bottom: var(--irc-speed-menu-top, 46px);
+  transform-origin: bottom right;
 }
 
 .irc-control-button {

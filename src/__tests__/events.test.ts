@@ -258,6 +258,73 @@ describe('wireEvents', () => {
     vi.useRealTimers()
   })
 
+  it('seeks the active video by five seconds with A/D and arrow keys', () => {
+    const { video, state } = createMockVideo({ currentTime: 50, duration: 100 })
+    const els = createControlsDOM()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const root = document.createElement('div')
+    const ac = new AbortController()
+
+    root.append(video, els.bar)
+    document.body.appendChild(root)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal, { eventRoot: root })
+    root.dispatchEvent(new Event('pointerenter'))
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+    expect(state.currentTime).toBe(55)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }))
+    expect(state.currentTime).toBe(50)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', bubbles: true }))
+    expect(state.currentTime).toBe(55)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
+    expect(state.currentTime).toBe(50)
+  })
+
+  it('does not handle seek shortcuts while typing', () => {
+    const { video, state } = createMockVideo({ currentTime: 50, duration: 100 })
+    const els = createControlsDOM()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const root = document.createElement('div')
+    const input = document.createElement('input')
+    const ac = new AbortController()
+
+    root.append(video, els.bar)
+    document.body.append(root, input)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal, { eventRoot: root })
+    root.dispatchEvent(new Event('pointerenter'))
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+    expect(state.currentTime).toBe(50)
+  })
+
+  it('handles seek shortcuts before Viewer bubble handlers can consume them', () => {
+    const { video, state } = createMockVideo({ currentTime: 50, duration: 100 })
+    const els = createControlsDOM()
+    const { store } = createPreferenceStore()
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const root = document.createElement('div')
+    const ac = new AbortController()
+
+    root.append(video, els.bar)
+    document.body.appendChild(root)
+    wireEvents(video, els, sync, tickLoop, store, ac.signal, { eventRoot: root })
+    root.dispatchEvent(new Event('pointerenter'))
+    root.addEventListener('keydown', (event) => {
+      event.stopPropagation()
+    })
+
+    root.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+    expect(state.currentTime).toBe(55)
+  })
+
   it('applies and persists a selected playback speed', () => {
     const { video } = createMockVideo()
     const { store, setSpeed, save } = createPreferenceStore()
@@ -572,10 +639,11 @@ describe('wireEvents', () => {
     wireEvents(video, els, sync, tickLoop, store, ac.signal)
     els.muteBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
 
+    // 当 snapshot.volume 为 0 时，使用默认恢复音量 0.5
     expect(markUserInteracted).toHaveBeenCalledTimes(1)
-    expect(setVolume).toHaveBeenCalledWith(0.1)
+    expect(setVolume).toHaveBeenCalledWith(0.5)
     expect(setMuted).toHaveBeenCalledWith(false)
-    expect(video.volume).toBe(0.1)
+    expect(video.volume).toBe(0.5)
     expect(video.muted).toBe(false)
     expect(updateMute).toHaveBeenCalledTimes(1)
     expect(save).toHaveBeenCalledTimes(1)
@@ -637,27 +705,8 @@ describe('wireEvents', () => {
   })
 
   it('reapplies stored volume preferences after user interaction', () => {
-    const { video } = createMockVideo({ muted: true, volume: 1 })
-    const { store } = createPreferenceStore({
-      muted: false,
-      volume: 0.4,
-      userInteracted: true,
-    })
-    const { sync, updateMute } = createSyncMock()
-    const { tickLoop } = createTickLoopMock()
-    const els = createControlsDOM()
-    const ac = new AbortController()
-
-    wireEvents(video, els, sync, tickLoop, store, ac.signal)
-    video.dispatchEvent(new Event('volumechange'))
-
-    expect(updateMute).toHaveBeenCalledTimes(1)
-    expect(video.muted).toBe(false)
-    expect(video.volume).toBe(0.4)
-  })
-
-  it('reasserts mute preference on play for reels Instagram silenced before user interacted', () => {
-    const { video } = createMockVideo({ muted: true, volume: 1 })
+    vi.useFakeTimers()
+    const { video } = createMockVideo({ muted: true, volume: 1, paused: false })
     const { store } = createPreferenceStore({
       muted: false,
       volume: 0.4,
@@ -671,8 +720,38 @@ describe('wireEvents', () => {
     wireEvents(video, els, sync, tickLoop, store, ac.signal)
     video.dispatchEvent(new Event('play'))
 
+    // play 事件后不立即取消静音（延迟 300ms 避免浏览器 autoplay 阻止）
+    expect(video.muted).toBe(true)
+
+    // 300ms 后尝试取消静音
+    vi.advanceTimersByTime(350)
     expect(video.muted).toBe(false)
-    expect(video.volume).toBe(0.4)
+
+    vi.useRealTimers()
+  })
+
+  it('reasserts mute preference on play for reels Instagram silenced before user interacted', () => {
+    vi.useFakeTimers()
+    const { video } = createMockVideo({ muted: true, volume: 1, paused: false })
+    const { store } = createPreferenceStore({
+      muted: false,
+      volume: 0.4,
+      userInteracted: true,
+    })
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+    video.dispatchEvent(new Event('play'))
+
+    // play 后延迟 300ms 才取消静音
+    expect(video.muted).toBe(true)
+    vi.advanceTimersByTime(350)
+    expect(video.muted).toBe(false)
+
+    vi.useRealTimers()
   })
 
   it('does not force mute state on play before the user has interacted', () => {
@@ -692,5 +771,44 @@ describe('wireEvents', () => {
 
     expect(video.muted).toBe(true)
     expect(video.volume).toBe(1)
+  })
+
+  /**
+   * 架构变更（2025-08）：隐藏 IG 原生音量控件，完全由插件控制音量
+   * 旧测试：用户通过原生控件调节音量 → 同步到插件偏好
+   * 新测试：IG 代码试图把 video 音量改回它的默认值 → 插件强制改回插件偏好
+   */
+  it('forces plugin volume preference when IG code tries to override', () => {
+    // currentTime > 0.5 表示不是新视频（新视频不强制非静音，避免浏览器 autoplay 阻止）
+    const { video } = createMockVideo({ muted: false, volume: 0.5, currentTime: 2 })
+    const { store, setVolume, setMuted, markUserInteracted, save } = createPreferenceStore({
+      muted: false,
+      volume: 0.5,
+      userInteracted: true,
+    })
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+
+    // 模拟 IG 的 React 代码把视频改回静音+音量0（自动播放策略）
+    // 先绕过 guard：guard 只在插件修改时才+计数，这里模拟外部代码直接改属性
+    // 所以直接触发 volumechange，不需要 guard 递增
+    video.muted = true
+    video.volume = 0
+    video.dispatchEvent(new Event('volumechange'))
+
+    // ✅ 关键断言：preferences.setVolume/setMuted **绝不能被调用**
+    // （外部代码改 video 属性绝不能反向覆盖插件偏好）
+    expect(setVolume).not.toHaveBeenCalledWith(0)
+    expect(setMuted).not.toHaveBeenCalledWith(true)
+    expect(markUserInteracted).not.toHaveBeenCalled()
+    expect(save).not.toHaveBeenCalled()
+
+    // ✅ 关键断言：video 属性必须被插件强制改回 0.5 + 非静音
+    expect(video.muted).toBe(false)
+    expect(video.volume).toBeCloseTo(0.5, 2)
   })
 })

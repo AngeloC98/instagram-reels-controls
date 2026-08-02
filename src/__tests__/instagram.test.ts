@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  avoidNativeOverlayOverlap,
   findInstagramVideos,
   findAdjacentInstagramReel,
   isInstagramVideoCandidate,
@@ -44,9 +45,28 @@ function appendToMain(...nodes: Node[]): HTMLElement {
   return main
 }
 
+function mockRect(element: Element, rect: Partial<DOMRect>): void {
+  Object.defineProperty(element, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => ({
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+      ...rect,
+    }),
+  })
+}
+
 describe('instagram adapter', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
+    history.replaceState({}, '', '/reels/test')
   })
 
   afterEach(() => {
@@ -166,6 +186,223 @@ describe('instagram adapter', () => {
     })
 
     expect(resolveInstagramEventRoot(video)).toBe(innerMount)
+  })
+
+  it('raises the native overlay only while controls are expanded', async () => {
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callback(performance.now())
+      return 1
+    })
+    const root = document.createElement('div')
+    const video = document.createElement('video')
+    const overlay = document.createElement('div')
+    const author = document.createElement('a')
+    const controls = document.createElement('div')
+    const ac = new AbortController()
+
+    overlay.appendChild(author)
+    root.append(video, overlay, controls)
+    document.body.appendChild(root)
+    mockRect(video, { right: 400, bottom: 600, width: 400, height: 600 })
+    mockRect(overlay, { top: 500, left: 20, right: 280, bottom: 550, width: 260, height: 50 })
+    mockRect(author, { top: 510, left: 30, right: 140, bottom: 540, width: 110, height: 30 })
+    mockRect(controls, { top: 540, left: 0, right: 400, bottom: 600, width: 400, height: 60 })
+
+    avoidNativeOverlayOverlap(video, root, controls, ac.signal)
+    controls.classList.add('irc-controls-visible')
+    await Promise.resolve()
+
+    expect(overlay.style.getPropertyValue('--irc-native-overlay-lift')).toBe('12px')
+    expect(overlay.classList.contains('irc-native-overlay-lift')).toBe(true)
+
+    controls.classList.remove('irc-controls-visible')
+    await Promise.resolve()
+    expect(overlay.style.getPropertyValue('--irc-native-overlay-lift')).toBe('0px')
+  })
+
+  it('leaves viewer and side-panel metadata outside the video untouched', async () => {
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callback(performance.now())
+      return 1
+    })
+    const root = document.createElement('div')
+    const video = document.createElement('video')
+    const metadata = document.createElement('div')
+    const author = document.createElement('a')
+    const controls = document.createElement('div')
+    const ac = new AbortController()
+
+    metadata.appendChild(author)
+    root.append(video, metadata, controls)
+    document.body.appendChild(root)
+    mockRect(video, { right: 400, bottom: 600, width: 400, height: 600 })
+    mockRect(metadata, { top: 500, left: 420, right: 620, bottom: 550, width: 200, height: 50 })
+    mockRect(author, { top: 510, left: 430, right: 540, bottom: 540, width: 110, height: 30 })
+    mockRect(controls, { top: 540, left: 0, right: 400, bottom: 600, width: 400, height: 60 })
+
+    avoidNativeOverlayOverlap(video, root, controls, ac.signal)
+    controls.classList.add('irc-controls-visible')
+    await Promise.resolve()
+
+    expect(metadata.classList.contains('irc-native-overlay-lift')).toBe(false)
+  })
+
+  it('raises information without moving its full-width gradient container', async () => {
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callback(performance.now())
+      return 1
+    })
+    const root = document.createElement('div')
+    const video = document.createElement('video')
+    const gradient = document.createElement('div')
+    const metadata = document.createElement('div')
+    const author = document.createElement('a')
+    const controls = document.createElement('div')
+    const ac = new AbortController()
+
+    metadata.appendChild(author)
+    gradient.appendChild(metadata)
+    root.append(video, gradient, controls)
+    document.body.appendChild(root)
+    mockRect(video, { right: 400, bottom: 600, width: 400, height: 600 })
+    mockRect(gradient, { top: 440, right: 400, bottom: 600, width: 400, height: 160 })
+    mockRect(metadata, { top: 500, left: 20, right: 280, bottom: 550, width: 260, height: 50 })
+    mockRect(author, { top: 510, left: 30, right: 140, bottom: 540, width: 110, height: 30 })
+    mockRect(controls, { top: 540, left: 0, right: 400, bottom: 600, width: 400, height: 60 })
+
+    avoidNativeOverlayOverlap(video, root, controls, ac.signal)
+    controls.classList.add('irc-controls-visible')
+    await Promise.resolve()
+
+    expect(metadata.classList.contains('irc-native-overlay-lift')).toBe(true)
+    expect(gradient.classList.contains('irc-native-overlay-lift')).toBe(false)
+  })
+
+  it('raises a non-interactive information container without moving its mask', async () => {
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callback(performance.now())
+      return 1
+    })
+    const root = document.createElement('div')
+    const video = document.createElement('video')
+    const gradient = document.createElement('div')
+    const metadata = document.createElement('div')
+    const controls = document.createElement('div')
+    const ac = new AbortController()
+
+    metadata.textContent = 'creator and caption'
+    gradient.appendChild(metadata)
+    root.append(video, gradient, controls)
+    document.body.appendChild(root)
+    mockRect(video, { right: 400, bottom: 600, width: 400, height: 600 })
+    mockRect(gradient, { top: 440, right: 400, bottom: 600, width: 400, height: 160 })
+    mockRect(metadata, { top: 500, left: 20, right: 340, bottom: 550, width: 320, height: 50 })
+    mockRect(controls, { top: 540, left: 0, right: 400, bottom: 600, width: 400, height: 60 })
+
+    avoidNativeOverlayOverlap(video, root, controls, ac.signal)
+    controls.classList.add('irc-controls-visible')
+    await Promise.resolve()
+
+    expect(metadata.style.getPropertyValue('--irc-native-overlay-lift')).toBe('22px')
+    expect(gradient.classList.contains('irc-native-overlay-lift')).toBe(false)
+  })
+
+  it('raises the clipping information parent with all of its contents', async () => {
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callback(performance.now())
+      return 1
+    })
+    const root = document.createElement('div')
+    const video = document.createElement('video')
+    const mask = document.createElement('div')
+    const clippingParent = document.createElement('div')
+    const metadata = document.createElement('div')
+    const controls = document.createElement('div')
+    const ac = new AbortController()
+
+    clippingParent.style.overflow = 'hidden'
+    metadata.textContent = 'creator, audio and caption'
+    clippingParent.appendChild(metadata)
+    mask.appendChild(clippingParent)
+    root.append(video, mask, controls)
+    document.body.appendChild(root)
+    mockRect(video, { right: 400, bottom: 600, width: 400, height: 600 })
+    mockRect(mask, { top: 340, right: 400, bottom: 600, width: 400, height: 260 })
+    mockRect(clippingParent, {
+      top: 460,
+      right: 400,
+      bottom: 560,
+      width: 400,
+      height: 100,
+    })
+    mockRect(metadata, { top: 490, left: 30, right: 350, bottom: 540, width: 320, height: 50 })
+    mockRect(controls, { top: 540, left: 0, right: 400, bottom: 600, width: 400, height: 60 })
+
+    avoidNativeOverlayOverlap(video, root, controls, ac.signal)
+    controls.classList.add('irc-controls-visible')
+    await Promise.resolve()
+
+    expect(clippingParent.style.getPropertyValue('--irc-native-overlay-lift')).toBe('12px')
+    expect(metadata.classList.contains('irc-native-overlay-lift')).toBe(false)
+    expect(mask.classList.contains('irc-native-overlay-lift')).toBe(false)
+  })
+
+  it('finds information rendered beside the video root', async () => {
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callback(performance.now())
+      return 1
+    })
+    const surface = document.createElement('div')
+    const root = document.createElement('div')
+    const video = document.createElement('video')
+    const metadata = document.createElement('button')
+    const author = document.createElement('a')
+    const controls = document.createElement('div')
+    const ac = new AbortController()
+
+    metadata.appendChild(author)
+    root.append(video, controls)
+    surface.append(root, metadata)
+    document.body.appendChild(surface)
+    mockRect(video, { right: 400, bottom: 600, width: 400, height: 600 })
+    mockRect(root, { right: 400, bottom: 600, width: 400, height: 600 })
+    mockRect(surface, { right: 400, bottom: 600, width: 400, height: 600 })
+    mockRect(metadata, { top: 500, left: 20, right: 280, bottom: 550, width: 260, height: 50 })
+    mockRect(author, { top: 510, left: 30, right: 140, bottom: 540, width: 110, height: 30 })
+    mockRect(controls, { top: 540, left: 0, right: 400, bottom: 600, width: 400, height: 60 })
+
+    avoidNativeOverlayOverlap(video, root, controls, ac.signal)
+    controls.classList.add('irc-controls-visible')
+    await Promise.resolve()
+
+    expect(metadata.style.getPropertyValue('--irc-native-overlay-lift')).toBe('12px')
+  })
+
+  it('does not move Feed post information', async () => {
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callback(performance.now())
+      return 1
+    })
+    history.replaceState({}, '', '/p/example/')
+    const article = document.createElement('article')
+    const root = document.createElement('div')
+    const video = document.createElement('video')
+    const metadata = document.createElement('button')
+    const controls = document.createElement('div')
+    const ac = new AbortController()
+
+    root.append(video, metadata, controls)
+    article.appendChild(root)
+    document.body.appendChild(article)
+    mockRect(video, { right: 400, bottom: 600, width: 400, height: 600 })
+    mockRect(metadata, { top: 500, left: 20, right: 280, bottom: 550, width: 260, height: 50 })
+    mockRect(controls, { top: 540, left: 0, right: 400, bottom: 600, width: 400, height: 60 })
+
+    avoidNativeOverlayOverlap(video, root, controls, ac.signal)
+    controls.classList.add('irc-controls-visible')
+    await Promise.resolve()
+
+    expect(metadata.classList.contains('irc-native-overlay-lift')).toBe(false)
   })
 
   it('finds adjacent reels by vertical order', () => {

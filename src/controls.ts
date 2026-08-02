@@ -8,7 +8,11 @@ import { preferenceStore } from './preferences'
 import { bindDocumentPictureInPictureButton, isDocumentPictureInPictureSource } from './pip'
 import { PICTURE_IN_PICTURE_ICON } from './pip/icon'
 import { ENABLE_DOCUMENT_PIP } from './buildFlags'
-import { resolveInstagramEventRoot } from './instagram'
+import {
+  avoidNativeOverlayOverlap,
+  hideNativeInstagramVolumeControls,
+  resolveInstagramEventRoot,
+} from './instagram'
 
 const injected = new WeakMap<HTMLVideoElement, () => void>()
 
@@ -40,7 +44,8 @@ export function buildControls(
     eventRoot.style.position = 'relative'
   }
   eventRoot.appendChild(els.bar)
-  wireEvents(video, els, sync, tickLoop, preferences, ac.signal, { eventRoot })
+  avoidNativeOverlayOverlap(video, eventRoot, els.bar, ac.signal)
+  const volumeGuard = wireEvents(video, els, sync, tickLoop, preferences, ac.signal, { eventRoot })
   bindAutoplayButton(els.autoplayBtn, preferences, ac.signal)
   bindAutoplayNextReel(video, preferences, ac.signal, {
     shouldHandle: () => !isDocumentPictureInPictureSource(video),
@@ -48,17 +53,21 @@ export function buildControls(
   if (ENABLE_DOCUMENT_PIP && els.pipBtn) {
     bindDocumentPictureInPictureButton(video, els.pipBtn, preferences, ac.signal)
   }
-  applyControlPreferences(video, els, preferences)
+  applyControlPreferences(video, els, preferences, volumeGuard)
   sync.updatePlayButton()
   sync.updateSeek()
   sync.updateMute()
   if (!video.paused) tickLoop.start()
+
+  /** 隐藏 Instagram 原生音量控件（安全版：一次性查找，不做定时刷新） */
+  const restoreNativeControls = hideNativeInstagramVolumeControls(video)
 
   injected.set(video, () => {
     tickLoop.stop()
     ac.abort()
     els.bar.remove()
     mount.classList.remove('irc-mount')
+    restoreNativeControls()
   })
 }
 

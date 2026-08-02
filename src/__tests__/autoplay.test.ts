@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { bindAutoplayButton, bindAutoplayNextReel } from '../autoplay'
+import { advanceToNextReel, bindAutoplayButton, bindAutoplayNextReel } from '../autoplay'
 import type { PreferenceSnapshot, PreferenceStore } from '../types'
 
 function createPreferenceStore(initial: Partial<PreferenceSnapshot> = {}) {
@@ -191,5 +191,54 @@ describe('autoplay next reel', () => {
     expect(onAdvance).toHaveBeenCalledTimes(1)
     expect(scrollSecondIntoView).not.toHaveBeenCalled()
     expect(playSecond).not.toHaveBeenCalled()
+  })
+
+  it('uses the viewer next-reel button instead of guessing from its position', async () => {
+    vi.useFakeTimers()
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    const video = document.createElement('video')
+    const nextButton = document.createElement('button')
+    nextButton.setAttribute('aria-label', '前往下一条 Reels')
+    const clickNext = vi.fn()
+    nextButton.addEventListener('click', clickNext)
+
+    setVideoWidth(video, 360)
+    Object.defineProperty(nextButton, 'offsetWidth', { configurable: true, value: 44 })
+    dialog.append(video, nextButton)
+    document.body.appendChild(dialog)
+
+    const advancing = advanceToNextReel(video)
+    expect(clickNext).toHaveBeenCalledTimes(1)
+
+    await vi.runAllTimersAsync()
+    await advancing
+    vi.useRealTimers()
+  })
+
+  it('waits for the viewer next-reel button when Instagram mounts it late', async () => {
+    vi.useFakeTimers()
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    const video = document.createElement('video')
+    const nextButton = document.createElement('button')
+    nextButton.setAttribute('aria-label', '前往下一条 Reels')
+    Object.defineProperty(nextButton, 'offsetWidth', { configurable: true, value: 44 })
+    const clickNext = vi.fn()
+    nextButton.addEventListener('click', clickNext)
+
+    setVideoWidth(video, 360)
+    dialog.appendChild(video)
+    document.body.appendChild(dialog)
+
+    const advancing = advanceToNextReel(video)
+    setTimeout(() => dialog.appendChild(nextButton), 100)
+
+    await vi.advanceTimersByTimeAsync(200)
+    expect(clickNext).toHaveBeenCalledTimes(1)
+
+    await vi.runAllTimersAsync()
+    await advancing
+    vi.useRealTimers()
   })
 })

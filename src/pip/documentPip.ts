@@ -300,7 +300,7 @@ class DocumentPictureInPictureSession {
       this.controlElements = els
     }
 
-    wireEvents(
+    const volumeGuard = wireEvents(
       video,
       els,
       sync,
@@ -314,7 +314,7 @@ class DocumentPictureInPictureSession {
       canAdvance: supportsDocumentPictureInPicture,
       onAdvance: (targetVideo) => this.followAutoplayToNextSource(video, targetVideo),
     })
-    applyControlPreferences(video, els, this.preferences)
+    applyControlPreferences(video, els, this.preferences, volumeGuard)
     sync.updatePlayButton()
     sync.updateSeek()
     sync.updateMute()
