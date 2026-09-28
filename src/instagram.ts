@@ -8,7 +8,15 @@ function hideSpeedMenus(): void {
 }
 
 function isInPrimaryInstagramSurface(video: HTMLVideoElement): boolean {
-  return Boolean(video.closest('main') ?? video.closest('[role="dialog"]'))
+  if (video.closest('main, [role="dialog"], [aria-modal="true"]')) return true
+
+  for (const child of document.body.children) {
+    if (child !== video && child.contains(video) && (child as HTMLElement).offsetWidth > 300) {
+      return true
+    }
+  }
+
+  return false
 }
 
 function isPlayableMediaSurface(video: HTMLVideoElement): boolean {
