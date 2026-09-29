@@ -39,8 +39,7 @@ export function buildControls(
   if (eventRoot !== mount && getComputedStyle(eventRoot).position === 'static') {
     eventRoot.style.position = 'relative'
   }
-  // Instagram's native volume UI lives in overlay siblings of the mount; content.css hides it here
-  eventRoot.classList.add('irc-event-root')
+  eventRoot.classList.add('irc-event-root') // content.css hides IG's native volume UI under this
   eventRoot.appendChild(els.bar)
   wireEvents(video, els, sync, tickLoop, preferences, ac.signal, { eventRoot })
   bindAutoplayButton(els.autoplayBtn, preferences, ac.signal)
