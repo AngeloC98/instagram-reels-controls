@@ -70,7 +70,7 @@ export function findAutoplayNextReel(
   return targetVideo
 }
 
-export async function advanceToNextReel(
+async function advanceToNextReel(
   video: HTMLVideoElement,
   options: AutoplayAdvanceOptions = {},
 ): Promise<boolean> {

@@ -387,12 +387,6 @@
   min-width: 160px;
   box-shadow: inset 0 1px 0 var(--irc-shadow-light);
   z-index: 10000;
-  opacity: 1;
-  transform: scale(1) translateY(0);
-  transform-origin: top right;
-  transition:
-    opacity var(--irc-fast) ease,
-    transform var(--irc-fast) ease;
 
   &[hidden] {
     display: none;

@@ -15,6 +15,7 @@ npm run build:firefox    # build Firefox only
 npm run build:chrome     # build Chrome only
 npm test                 # run tests (vitest)
 npm run test:watch       # tests in watch mode
+npm run test:coverage    # tests with v8 coverage report (coverage/, gitignored)
 npm run lint             # eslint + prettier check
 npm run format           # prettier auto-fix
 npx tsc --noEmit         # typecheck (CI runs this separately)
