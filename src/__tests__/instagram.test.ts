@@ -74,6 +74,30 @@ describe('instagram adapter', () => {
     expect(isInstagramVideoCandidate(popupVideo)).toBe(false)
   })
 
+  it('recognizes videos rendered inside an aria-modal viewer', () => {
+    const viewer = document.createElement('div')
+    const video = document.createElement('video')
+
+    viewer.setAttribute('aria-modal', 'true')
+    setVideoWidth(video, 360)
+    viewer.appendChild(video)
+    document.body.appendChild(viewer)
+
+    expect(isInstagramVideoCandidate(video)).toBe(true)
+  })
+
+  it('recognizes videos rendered in a body-level viewer without dialog semantics', () => {
+    const viewer = document.createElement('div')
+    const video = document.createElement('video')
+
+    Object.defineProperty(viewer, 'offsetWidth', { configurable: true, value: 960 })
+    setVideoWidth(video, 360)
+    viewer.appendChild(video)
+    document.body.appendChild(viewer)
+
+    expect(isInstagramVideoCandidate(video)).toBe(true)
+  })
+
   it('finds only eligible instagram videos', () => {
     const smallWrapper = document.createElement('div')
     const largeWrapper = document.createElement('div')
