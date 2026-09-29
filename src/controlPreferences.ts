@@ -1,5 +1,21 @@
 import type { ControlElements, PreferenceStore } from './types'
 
+type SpeedControls = Pick<ControlElements, 'speedBtn' | 'speedOptions'>
+
+export function applySpeedPreference(
+  video: HTMLVideoElement,
+  els: SpeedControls,
+  speed: number,
+): void {
+  // Media loads reset playbackRate to defaultPlaybackRate, so set both
+  if (video.defaultPlaybackRate !== speed) video.defaultPlaybackRate = speed
+  if (video.playbackRate !== speed) video.playbackRate = speed
+  els.speedBtn.textContent = `${String(speed)}×`
+  els.speedOptions.forEach((o) => {
+    o.classList.toggle('irc-speed-active', parseFloat(o.dataset.speed ?? '1') === speed)
+  })
+}
+
 export function applyControlPreferences(
   video: HTMLVideoElement,
   els: ControlElements,
@@ -9,9 +25,5 @@ export function applyControlPreferences(
 
   // Mute state applied on play event to avoid breaking autoplay policy
   video.volume = snapshot.volume
-  video.playbackRate = snapshot.speed
-  els.speedBtn.textContent = `${String(snapshot.speed)}\u00D7`
-  els.speedOptions.forEach((o) => {
-    o.classList.toggle('irc-speed-active', parseFloat(o.dataset.speed ?? '1') === snapshot.speed)
-  })
+  applySpeedPreference(video, els, snapshot.speed)
 }

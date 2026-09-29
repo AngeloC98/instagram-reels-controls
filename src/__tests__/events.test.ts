@@ -282,6 +282,34 @@ describe('wireEvents', () => {
     ).toBe(false)
     expect(els.speedMenu.hidden).toBe(true)
     expect(save).toHaveBeenCalledTimes(1)
+    expect(video.defaultPlaybackRate).toBe(1.5)
+  })
+
+  it('catches up to a speed chosen on another reel when it starts playing', () => {
+    const { video } = createMockVideo({ playbackRate: 1 })
+    const { store, state } = createPreferenceStore({ speed: 1 })
+    const { sync } = createSyncMock()
+    const { tickLoop } = createTickLoopMock()
+    const els = createControlsDOM()
+    const ac = new AbortController()
+
+    wireEvents(video, els, sync, tickLoop, store, ac.signal)
+    state.speed = 2
+    video.dispatchEvent(new Event('play'))
+
+    expect(video.playbackRate).toBe(2)
+    expect(video.defaultPlaybackRate).toBe(2)
+    expect(els.speedBtn.textContent).toBe(`2×`)
+    expect(
+      els.speedOptions
+        .find((speedOption) => speedOption.dataset.speed === '2')
+        ?.classList.contains('irc-speed-active'),
+    ).toBe(true)
+    expect(
+      els.speedOptions
+        .find((speedOption) => speedOption.dataset.speed === '1')
+        ?.classList.contains('irc-speed-active'),
+    ).toBe(false)
   })
 
   it('reacts to pointer motion on Instagram overlay siblings outside the bar mount', () => {
