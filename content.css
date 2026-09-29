@@ -48,12 +48,14 @@
   pointer-events: all;
 }
 
-/* Hide Instagram's native volume UI without depending on generated classes or localized labels. */
-.irc-mount [role='slider'][aria-valuemin='0'][aria-valuemax='100'][aria-valuenow] {
+/* Hide Instagram's native volume UI without depending on generated classes or localized labels.
+   Scoped to the event root: IG renders it in overlay siblings of the video, not inside .irc-mount. */
+.irc-event-root [role='slider'][aria-valuemin='0'][aria-valuemax='100'][aria-valuenow] {
   display: none !important;
 }
 
-.irc-mount [role='button']:has(> svg[role='img'][viewBox='0 0 48 48'][width='16'][height='16']) {
+.irc-event-root
+  [role='button']:has(> svg[role='img'][viewBox='0 0 48 48']:is([width='12'], [width='16'])) {
   display: none !important;
 }
 

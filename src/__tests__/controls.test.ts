@@ -15,7 +15,7 @@ vi.mock('../browser', () => ({
 
 vi.mock('../pip', () => pipMock)
 
-import { buildControls } from '../controls'
+import { buildControls, cleanupRemovedVideos } from '../controls'
 
 function createPreferenceStore(initial: Partial<PreferenceSnapshot> = {}): PreferenceStore {
   const state: PreferenceSnapshot = {
@@ -159,6 +159,47 @@ describe('buildControls', () => {
     expect(mount.style.position).toBe('sticky')
     expect(mount.style.overflow).toBe('visible')
     expect(mount.querySelectorAll('.irc-controls')).toHaveLength(1)
+  })
+
+  it('marks the event root so native volume UI in overlay siblings is hidden', () => {
+    const reelRoot = document.createElement('div')
+    const wrapper = document.createElement('div')
+    const mount = document.createElement('div')
+    const video = createVideo()
+    const rect = {
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 400,
+      bottom: 700,
+      width: 400,
+      height: 700,
+      toJSON: () => ({}),
+    }
+    for (const el of [video, mount, wrapper]) {
+      Object.defineProperty(el, 'getBoundingClientRect', { configurable: true, value: () => rect })
+    }
+    Object.defineProperty(reelRoot, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ ...rect, width: 600, right: 600 }),
+    })
+
+    mount.appendChild(video)
+    wrapper.appendChild(mount)
+    reelRoot.appendChild(wrapper)
+    document.body.appendChild(reelRoot)
+
+    buildControls(video, mount, createPreferenceStore())
+
+    expect(wrapper.classList.contains('irc-event-root')).toBe(true)
+    expect(mount.classList.contains('irc-event-root')).toBe(false)
+
+    wrapper.remove()
+    cleanupRemovedVideos([{ removedNodes: [wrapper] } as unknown as MutationRecord])
+
+    expect(wrapper.classList.contains('irc-event-root')).toBe(false)
+    expect(wrapper.querySelector('.irc-controls')).toBeNull()
   })
 
   it('lets Document PiP own autoplay for its active source', async () => {
