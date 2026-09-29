@@ -45,11 +45,11 @@ export function createControlsDOM(options: CreateControlsDOMOptions = {}): Contr
   ): HTMLElementTagNameMap[K] => el(tag, attrs, children, ownerDocument)
 
   const playBtn = create('button', {
-    className: 'irc-control-button irc-compact-control irc-icon-control irc-btn irc-playpause',
+    className: 'irc-control-button irc-compact-control irc-icon-control',
     title: 'Play/Pause',
   })
   const muteBtn = create('button', {
-    className: 'irc-control-button irc-compact-control irc-icon-control irc-btn irc-mute',
+    className: 'irc-control-button irc-compact-control irc-icon-control',
     title: 'Mute/Unmute',
   })
   const volFill = create('div', { className: 'irc-vol-fill' })
@@ -65,7 +65,7 @@ export function createControlsDOM(options: CreateControlsDOMOptions = {}): Contr
     textContent: '1\u00D7',
   })
   const autoplayBtn = create('button', {
-    className: 'irc-control-button irc-compact-control irc-icon-control irc-btn irc-autoplay-btn',
+    className: 'irc-control-button irc-compact-control irc-icon-control',
     title: 'Autoplay',
     'aria-label': 'Autoplay',
     'aria-pressed': 'false',
@@ -89,7 +89,7 @@ export function createControlsDOM(options: CreateControlsDOMOptions = {}): Contr
   const seekTrack = create('div', { className: 'irc-seek' }, [seekFill, seekThumb])
   const pipBtn = includePictureInPictureButton
     ? create('button', {
-        className: 'irc-control-button irc-compact-control irc-icon-control irc-btn irc-pip-btn',
+        className: 'irc-control-button irc-compact-control irc-icon-control',
         title: 'Picture-in-picture',
         'aria-label': 'Picture-in-picture',
         hidden: true,

@@ -54,5 +54,3 @@ export const preferenceStore: PreferenceStore = {
     }, 300)
   },
 }
-
-export const prefsReady = preferenceStore.ready

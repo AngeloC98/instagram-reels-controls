@@ -1,12 +1,6 @@
 const MIN_VIDEO_WIDTH = 200
 export type ReelNavigationDirection = 'previous' | 'next'
 
-function hideSpeedMenus(): void {
-  document.querySelectorAll<HTMLDivElement>('.irc-speed-menu').forEach((menu) => {
-    menu.hidden = true
-  })
-}
-
 function isInPrimaryInstagramSurface(video: HTMLVideoElement): boolean {
   return Boolean(video.closest('main') ?? video.closest('[role="dialog"]'))
 }
@@ -131,8 +125,6 @@ export function startInstagramIntegration({
   const injectDetectedVideos = (): void => {
     injectVideos(findInstagramVideos())
   }
-
-  document.addEventListener('click', hideSpeedMenus)
 
   let mutationPending = false
   let pendingMutations: MutationRecord[] = []

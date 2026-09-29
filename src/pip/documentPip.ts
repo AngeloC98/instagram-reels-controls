@@ -64,7 +64,7 @@ export function subscribeDocumentPictureInPictureSource(
   }
 }
 
-export async function openDocumentPictureInPicture(
+async function openDocumentPictureInPicture(
   video: HTMLVideoElement,
   preferences: PreferenceStore,
 ): Promise<void> {

@@ -7,7 +7,6 @@ const mockStorage = {
 
 vi.mock('../browser', () => ({
   ext: {
-    runtime: { getURL: (path: string) => `chrome-extension://test/${path}` },
     storage: { local: mockStorage },
   },
 }))

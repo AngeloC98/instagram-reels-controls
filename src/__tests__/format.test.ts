@@ -3,7 +3,6 @@ import { formatTime } from '../sync'
 
 vi.mock('../browser', () => ({
   ext: {
-    runtime: { getURL: (path: string) => `chrome-extension://test/${path}` },
     storage: { local: { get: vi.fn().mockResolvedValue({}), set: vi.fn() } },
   },
 }))

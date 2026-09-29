@@ -4,7 +4,6 @@ import { PICTURE_IN_PICTURE_ICON } from '../pip/icon'
 
 vi.mock('../browser', () => ({
   ext: {
-    runtime: { getURL: (path: string) => `chrome-extension://test/${path}` },
     storage: { local: { get: vi.fn().mockResolvedValue({}), set: vi.fn() } },
   },
 }))
