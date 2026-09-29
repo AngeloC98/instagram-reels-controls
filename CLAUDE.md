@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Browser extension (Manifest V3) that injects media controls onto Instagram Reels and video posts. Supports Firefox and Chrome. Content script only — no background/popup pages.
+Browser extension (Manifest V3) that injects media controls onto Instagram Reels and video posts. Supports Firefox and Chrome. Content scripts only — no background/popup pages.
 
 ## Commands
 
@@ -17,7 +17,7 @@ npm test                 # run tests (vitest)
 npm run test:watch       # tests in watch mode
 npm run lint             # eslint + prettier check
 npm run format           # prettier auto-fix
-npx tsc --noEmit         # typecheck (CI runs this separately)
+npm run typecheck        # tsc --noEmit (CI runs lint → typecheck → test → build)
 npm run icons            # regenerate icon PNGs from icons/icon.svg via Puppeteer
 npm run zip:firefox      # zip Firefox build for AMO submission
 npm run zip:chrome       # zip Chrome build
@@ -25,23 +25,33 @@ npm run zip:chrome       # zip Chrome build
 
 ## Architecture
 
-The extension is a single content script (`src/index.ts` → bundled as IIFE `content.js`). No background script, no popup.
+Two content scripts are declared in `manifests/base.json`:
 
-**Entry flow:** `index.ts` waits for `prefsReady` (async storage load), then starts a `MutationObserver` on `document.body`. On each mutation batch (debounced via `requestAnimationFrame`), it finds `<video>` elements wider than 200px and calls `buildControls`.
+1. **`mainWorld.js`** (`static/mainWorld.js`, copied as-is, not bundled) — runs in the page's `"world": "MAIN"` at `document_start`. Swallows `visibilitychange` while the document is hidden so Instagram doesn't pause every reel on tab/window blur. Anything that must intercept Instagram's own calls has to live here — patches made from the isolated world don't reach the page's prototypes.
+2. **`content.js`** (`src/index.ts`, bundled as IIFE) + `content.css` — the isolated-world script that does everything else.
+
+**Entry flow:** `index.ts` waits for `preferenceStore.ready` (async storage load), then calls `startInstagramIntegration` (`instagram.ts`). That starts a `MutationObserver` on `document.body`; mutation batches are coalesced via `requestAnimationFrame`, removed videos are cleaned up, and added `<video>` elements that are inside `<main>` or a `[role="dialog"]` and wider than 200px get `buildControls(video, mount)`.
 
 **Module responsibilities:**
 
-- `controls.ts` — orchestrator. `buildControls` creates DOM, wires events, applies preferences, starts tick loop. Uses a `WeakMap` to track injected videos and their cleanup functions. `cleanupRemovedVideos` tears down controls when videos are removed from DOM.
-- `dom.ts` — pure DOM construction via the `el()` helper. Returns a `ControlElements` bag. No side effects.
-- `sync.ts` — video↔UI state sync. `createSyncHandlers` returns functions to update play button icon, seek bar position/gradient, and volume icon/bar. `createTickLoop` drives seek updates via `requestAnimationFrame` while playing.
-- `events.ts` — `wireEvents` attaches all event listeners using an `AbortSignal` for cleanup. Handles scrubbing, speed menu, volume overrides (fights Instagram's volume resets after user interaction).
-- `preferences.ts` — module-level mutable state for volume/muted/speed. Loads from `ext.storage.local` on init, debounce-saves on change (300ms).
+- `instagram.ts` — all Instagram DOM knowledge: video detection, mount resolution, `resolveInstagramEventRoot` (walks up to the outermost ancestor with the same rect as the video, because IG stacks pointer-capturing overlay siblings above the video), adjacent-reel lookup and scrolling.
+- `controls.ts` — orchestrator. `buildControls` creates DOM, appends the bar to the event root, wires events/autoplay/PiP, applies preferences, starts the tick loop. A `WeakMap` tracks injected videos and their cleanup functions; `cleanupRemovedVideos` tears them down. Takes an optional `PreferenceStore` for testing.
+- `dom.ts` — pure DOM construction via the `el()` helper. Returns a `ControlElements` bag (see `types.ts`). Supports an `ownerDocument` option so controls can be built inside the PiP window.
+- `sync.ts` — video↔UI state sync. `createSyncHandlers` updates the play icon, seek fill/thumb/time label, and volume icon/fill. `createTickLoop` drives seek updates via `requestAnimationFrame` while playing.
+- `events.ts` — `wireEvents` attaches all listeners using an `AbortSignal` for cleanup: visibility (pointer activity on the event root), seek/volume dragging on custom div tracks, speed menu, mute, and the volume-preference re-assertion.
+- `controlsVisibility.ts` — state machine (`hidden`/`visible`/`pinned`) for showing the bar. Pins (`controls-hover`, `keyboard-focus`, `menu`, `scrubbing`, `volume-drag`) keep it visible; otherwise it hides after an idle timeout.
+- `pointerActivity.ts` — tracks the last pointer position so synthetic/zero-movement `pointermove`s don't count as activity.
+- `autoplay.ts` — "autoplay next" toggle button (synced across all injected bars) and the `ended` handler that scrolls to and plays the next reel.
+- `controlPreferences.ts` — applies stored volume/speed to a video and its speed menu on injection.
+- `preferences.ts` — `preferenceStore`: module-level state (`muted`, `volume`, `speed`, `autoplayNext`, plus in-memory `userInteracted`) behind a getter/setter API. Loads from `ext.storage.local`; `save()` debounces writes (300ms).
+- `pip/` — **Chrome-only** Document Picture-in-Picture. `documentPip.ts` opens the PiP window, mirrors the video via `captureStream`, builds a second set of controls inside it, and handles wheel/keyboard navigation between reels. `activeReelTracker.ts` follows IG's `play` events so PiP swaps to whichever reel the user scrolls to.
+- `buildFlags.ts` — `ENABLE_DOCUMENT_PIP`, from the `__IRC_ENABLE_DOCUMENT_PIP__` Vite define (true only for the Chrome target).
+- `icons.ts` — SVGs imported as `?raw` strings, parsed once per document via a `<template>`, cached and cloned. `setIcon` swaps a button's icon.
 - `browser.ts` — one-liner shim: `browser` (Firefox) vs `chrome` (Chrome).
-- `icons.ts` — resolves SVG icon URLs via `runtime.getURL` and provides `setIcon` helper.
 
-**Build system:** Vite bundles `src/index.ts` → `dist/{target}/content.js` as IIFE. A custom Vite plugin (`extensionPlugin` in `vite.config.ts`) merges `manifests/base.json` + `manifests/{target}.json` into the output `manifest.json`, and copies `content.css` + `icons/`. The `--target=` flag is passed after `--` in npm scripts.
+**Build system:** Vite bundles `src/index.ts` → `dist/{target}/content.js` as IIFE. A custom Vite plugin (`extensionPlugin` in `vite.config.ts`) merges `manifests/base.json` + `manifests/{target}.json` into `manifest.json`, copies `static/mainWorld.js`, `content.css` and `icons/`. The `--target=` flag is passed after `--` in npm scripts.
 
-**Styling:** All in `content.css` (not bundled by Vite — copied as-is). Classes prefixed `irc-`.
+**Styling:** All in `content.css` (not bundled — copied by the plugin). Classes prefixed `irc-`. CSS between `/* chrome-only: document-pip start */` and `/* chrome-only: document-pip end */` is stripped from the Firefox build.
 
 ## Testing
 
@@ -49,10 +59,13 @@ Tests live in `src/__tests__/`. Uses Vitest with jsdom environment and global im
 
 ## Key constraints
 
-- **Instagram CSP blocks DOMParser/innerHTML** — all SVGs are bundled as files and loaded via `<img>` tags. Never use innerHTML or DOMParser in the content script.
-- **Autoplay policy** — don't set `video.muted = false` on injection. Mute state is only restored after user interaction via the `userInteracted` flag. See `applyPreferences` comment.
-- **Instagram resets volume on play** — the `volumechange` listener in `events.ts` re-asserts preferred values, gated by `userInteracted` to avoid breaking autoplay on first load.
-- **Range input focus traps** — focused range inputs keep `pointer-events: all` even when parent has `pointer-events: none`. The `pointerup` handler on the bar blurs inputs to prevent controls from staying visible.
+- **No dynamic HTML from untrusted strings.** The only markup parsing is `icons.ts` parsing bundled SVG files via `<template>`. Build everything else with `el()`/`createElement`.
+- **Autoplay policy** — never set `video.muted = false` on injection. Mute state is only restored after user interaction (`preferences.markUserInteracted()` on mute/volume controls). See `controlPreferences.ts`.
+- **Instagram resets volume** — `reassertVolumePreference` in `events.ts` re-applies preferred mute/volume on `volumechange` and `play`, gated by `userInteracted` so first-load autoplay isn't broken.
+- **Instagram overlays capture pointer events** — bind hover/activity listeners to the element from `resolveInstagramEventRoot`, not `video.parentElement`, or events never arrive.
+- **Instagram pauses reels on blur** — handled in `static/mainWorld.js`. It suppresses only hidden-state `visibilitychange`, not `pause` itself, so IG's scroll-to-next-reel pauses still work.
+- **Stop propagation from the bar** — `click`/`pointerdown` on the controls must not reach Instagram's handlers (which toggle play/mute).
+- **Instagram DOM changes often** — when something breaks, inspect the live page first; keep IG-specific selectors and heuristics in `instagram.ts`.
 
 ## Code style
 
