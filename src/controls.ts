@@ -39,6 +39,7 @@ export function buildControls(
   if (eventRoot !== mount && getComputedStyle(eventRoot).position === 'static') {
     eventRoot.style.position = 'relative'
   }
+  eventRoot.classList.add('irc-event-root') // content.css hides IG's native volume UI under this
   eventRoot.appendChild(els.bar)
   wireEvents(video, els, sync, tickLoop, preferences, ac.signal, { eventRoot })
   bindAutoplayButton(els.autoplayBtn, preferences, ac.signal)
@@ -59,6 +60,7 @@ export function buildControls(
     ac.abort()
     els.bar.remove()
     mount.classList.remove('irc-mount')
+    eventRoot.classList.remove('irc-event-root')
   })
 }
 
