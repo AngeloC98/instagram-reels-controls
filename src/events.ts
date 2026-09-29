@@ -316,8 +316,7 @@ function bindSpeedEvents(
     )
   })
 
-  // Speed is a global preference, but other reels were injected before it changed.
-  // Catch them up when they start playing.
+  // Speed may have been changed on another reel since this one was injected
   video.addEventListener(
     'play',
     () => {

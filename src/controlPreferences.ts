@@ -7,7 +7,7 @@ export function applySpeedPreference(
   els: SpeedControls,
   speed: number,
 ): void {
-  // defaultPlaybackRate survives a media reload, which resets playbackRate to it
+  // Media loads reset playbackRate to defaultPlaybackRate, so set both
   if (video.defaultPlaybackRate !== speed) video.defaultPlaybackRate = speed
   if (video.playbackRate !== speed) video.playbackRate = speed
   els.speedBtn.textContent = `${String(speed)}×`
