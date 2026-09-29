@@ -5,6 +5,7 @@ import {
   type ControlsVisibilityMachine,
 } from './controlsVisibility'
 import { hasPointerMoved, recordPointerPosition } from './pointerActivity'
+import { applySpeedPreference } from './controlPreferences'
 
 function isNodeInDocument(value: EventTarget | null, ownerDocument: Document): value is Node {
   const NodeConstructor = ownerDocument.defaultView?.Node ?? Node
@@ -306,19 +307,24 @@ function bindSpeedEvents(
       (e) => {
         e.stopPropagation()
         const speed = parseFloat(opt.dataset.speed ?? '1')
-        video.playbackRate = speed
         preferences.setSpeed(speed)
-        speedBtn.textContent = opt.textContent
-        speedOptions.forEach((option) => {
-          option.classList.remove('irc-speed-active')
-        })
-        opt.classList.add('irc-speed-active')
+        applySpeedPreference(video, { speedBtn, speedOptions }, speed)
         setSpeedMenuOpen(speedMenu, visibility, false)
         preferences.save()
       },
       { signal: sig },
     )
   })
+
+  // Speed is a global preference, but other reels were injected before it changed.
+  // Catch them up when they start playing.
+  video.addEventListener(
+    'play',
+    () => {
+      applySpeedPreference(video, { speedBtn, speedOptions }, preferences.getSnapshot().speed)
+    },
+    { signal: sig },
+  )
 }
 
 function bindMuteEvents(
